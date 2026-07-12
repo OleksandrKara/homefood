@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: homefood-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - default
+
+  adminer:
+    image: adminer
+    container_name: homefood-adminer
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8091:8080"
+    networks:
+      - default
+    depends_on:
+      - postgres
+
+  admin:
+    build: ./admin
+    container_name: homefood-admin
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    ports:
+      - "127.0.0.1:8010:8080"
+    networks:
+      - default
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/admin/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+
+volumes:
+  postgres-data:
+    name: homefood_postgres-data
+
+networks:
+  default:
+    name: homefood_default
