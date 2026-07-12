@@ -1,0 +1,12 @@
+.env
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+
+# Java / Maven
+admin/target/
+*.class
+.idea/
+*.iml
