@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "products")
 @Getter
@@ -24,4 +26,7 @@ public class Product {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @Column(name = "base_price", nullable = false)
+    private BigDecimal basePrice = BigDecimal.ZERO;
 }
