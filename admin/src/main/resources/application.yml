@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: homefood-admin
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:homefood}
+    username: ${DB_USER:homefood}
+    password: ${DB_PASSWORD:homefood}
+    hikari:
+      initialization-fail-timeout: -1
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+  thymeleaf:
+    cache: false
+
+app:
+  admin:
+    username: ${ADMIN_USERNAME:admin}
+    password: ${ADMIN_PASSWORD:}
+
+server:
+  port: 8080
+  forward-headers-strategy: framework
+  servlet:
+    context-path: /admin
+    session:
+      timeout: 12h
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+
+logging:
+  level:
+    org.flywaydb: INFO
