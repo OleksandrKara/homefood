@@ -11,6 +11,7 @@
       <span class="badge-status" th:classappend="${p.active} ? 'badge-status-DONE' : 'badge-status-CANCELLED'"
             th:text="${p.active} ? 'активен' : 'скрыт'"></span>
     </div>
+    <div class="subtitle" th:text="'$' + ${#numbers.formatDecimal(p.basePrice, 1, 2)} + ' / банка'"></div>
   </a>
 
   <div th:if="${#lists.isEmpty(products)}" class="empty-state">

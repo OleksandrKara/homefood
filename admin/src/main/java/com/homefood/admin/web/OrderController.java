@@ -5,6 +5,7 @@ import com.homefood.admin.entity.DeliveryType;
 import com.homefood.admin.entity.Order;
 import com.homefood.admin.entity.OrderStatus;
 import com.homefood.admin.entity.Product;
+import com.homefood.admin.pricing.OrderPricing;
 import com.homefood.admin.repository.ClientRepository;
 import com.homefood.admin.repository.OrderRepository;
 import com.homefood.admin.repository.ProductRepository;
@@ -46,8 +47,10 @@ public class OrderController {
             addFormAttributes(model);
             return "orders/form";
         }
+        Product product = productRef(productId);
         order.setClient(clientRef(clientId));
-        order.setProduct(productRef(productId));
+        order.setProduct(product);
+        order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), order.getQuantity()));
         orderRepository.save(order);
         return "redirect:/orders";
     }
@@ -70,10 +73,12 @@ public class OrderController {
         }
         Order existing = orderRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
+        Product product = productRef(productId);
         order.setId(id);
         order.setCreatedAt(existing.getCreatedAt());
         order.setClient(clientRef(clientId));
-        order.setProduct(productRef(productId));
+        order.setProduct(product);
+        order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), order.getQuantity()));
         orderRepository.save(order);
         return "redirect:/orders";
     }

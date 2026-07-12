@@ -20,16 +20,17 @@
 
   <div class="mb-3">
     <label class="form-label">Товар</label>
-    <select name="productId" class="form-select" required>
-      <option th:each="p : ${products}" th:value="${p.id}"
-              th:text="${p.name} + ' ' + ${p.sizeLabel}"
+    <select id="product-select" name="productId" class="form-select" required>
+      <option th:each="p : ${products}" th:value="${p.id}" th:attr="data-price=${p.basePrice}"
+              th:text="${p.name} + ' ' + ${p.sizeLabel} + ' — $' + ${#numbers.formatDecimal(p.basePrice, 1, 2)} + '/банка'"
               th:selected="${order.product != null and order.product.id == p.id}"></option>
     </select>
   </div>
 
   <div class="mb-3">
     <label class="form-label">Количество банок</label>
-    <input type="number" min="1" th:field="*{quantity}" class="form-control" required/>
+    <input type="number" min="1" id="quantity-input" th:field="*{quantity}" class="form-control" required/>
+    <div id="price-estimate" class="mt-2" style="font-size:1.05rem; font-weight:600;"></div>
   </div>
 
   <div class="mb-3">
@@ -94,6 +95,35 @@
     el.addEventListener('change', toggleDeliveryFields);
   });
   toggleDeliveryFields();
+
+  // Mirrors OrderPricing.calculateTotal server-side: jar 1 full price,
+  // jars 2-3 discounted $1 each, jar 4+ back to full price.
+  function calculateTotal(basePrice, quantity) {
+    var total = 0;
+    for (var jarIndex = 1; jarIndex <= quantity; jarIndex++) {
+      total += (jarIndex === 2 || jarIndex === 3) ? (basePrice - 1) : basePrice;
+    }
+    return total;
+  }
+
+  function updatePriceEstimate() {
+    var productSelect = document.getElementById('product-select');
+    var quantityInput = document.getElementById('quantity-input');
+    var estimateEl = document.getElementById('price-estimate');
+    var option = productSelect.options[productSelect.selectedIndex];
+    var basePrice = option ? parseFloat(option.getAttribute('data-price')) : NaN;
+    var quantity = parseInt(quantityInput.value, 10);
+    if (isNaN(basePrice) || isNaN(quantity) || quantity < 1) {
+      estimateEl.textContent = '';
+      return;
+    }
+    var total = calculateTotal(basePrice, quantity);
+    estimateEl.textContent = 'Итого: $' + total.toFixed(2);
+  }
+
+  document.getElementById('product-select').addEventListener('change', updatePriceEstimate);
+  document.getElementById('quantity-input').addEventListener('input', updatePriceEstimate);
+  updatePriceEstimate();
 </script>
 </body>
 </html>
