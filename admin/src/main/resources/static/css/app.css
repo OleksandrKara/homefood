@@ -208,13 +208,22 @@ body {
 .form-control, .form-select {
   min-height: 48px;
   font-size: 1rem;
+  width: 100%;
+  padding: 10px 14px;
+  color: #212529;
+  box-sizing: border-box;
 }
 textarea.form-control { min-height: 84px; }
+/* Placeholders must read as hints, not as text you already typed. */
+.form-control::placeholder { color: #adb5bd; opacity: 1; }
+.form-control::-webkit-input-placeholder { color: #adb5bd; opacity: 1; }
 .form-label {
+  display: block;
   font-weight: 600;
   font-size: 0.9rem;
   color: #495057;
   margin-bottom: 6px;
+  cursor: pointer;
 }
 .btn {
   min-height: 48px;

@@ -50,23 +50,23 @@
 
     <form th:action="@{/shop/reserve}" method="post">
       <div class="mb-3">
-        <label class="form-label">Ваше имя</label>
-        <input type="text" name="name" class="form-control" required autofocus/>
+        <label class="form-label" for="shop-name">Ваше имя</label>
+        <input type="text" id="shop-name" name="name" class="form-control" required autofocus/>
       </div>
       <div class="mb-3">
-        <label class="form-label">Телефон</label>
-        <input type="tel" name="phone" class="form-control" placeholder="+1 555 123 4567" required/>
+        <label class="form-label" for="shop-phone">Телефон</label>
+        <input type="tel" id="shop-phone" name="phone" class="form-control" placeholder="+1 555 123 4567" required/>
       </div>
       <div class="mb-3" th:if="${products.size() > 1}">
-        <label class="form-label">Товар</label>
-        <select name="productId" class="form-select" required>
+        <label class="form-label" for="shop-product">Товар</label>
+        <select id="shop-product" name="productId" class="form-select" required>
           <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name} + ' ' + ${p.sizeLabel}"></option>
         </select>
       </div>
       <input th:if="${products.size() == 1}" type="hidden" name="productId" th:value="${products[0].id}"/>
 
       <div class="mb-3">
-        <label class="form-label">Количество банок</label>
+        <label class="form-label" for="qty-input">Количество банок</label>
         <div class="qty-stepper">
           <button type="button" id="qty-minus" aria-label="Меньше">−</button>
           <input type="number" name="quantity" id="qty-input" value="1" min="1" th:max="${maxQuantity}" readonly/>
@@ -76,8 +76,23 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label">Комментарий</label>
-        <textarea name="notes" class="form-control" placeholder="необязательно"></textarea>
+        <label class="form-label">Когда сможете подъехать?</label>
+        <div class="row g-2">
+          <div class="col-7">
+            <label class="visually-hidden" for="shop-date">Дата</label>
+            <input type="date" id="shop-date" name="preferredDate" class="form-control"/>
+          </div>
+          <div class="col-5">
+            <label class="visually-hidden" for="shop-time">Время</label>
+            <input type="time" id="shop-time" name="preferredTime" class="form-control"/>
+          </div>
+        </div>
+        <div class="qty-cap">необязательно, но поможет нам подготовиться</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="shop-notes">Комментарий</label>
+        <textarea id="shop-notes" name="notes" class="form-control" placeholder="необязательно"></textarea>
       </div>
 
       <button type="submit" class="shop-submit">Забронировать</button>

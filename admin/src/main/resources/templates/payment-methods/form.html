@@ -10,7 +10,7 @@
     <div th:each="err : ${#fields.errors('*')}" th:text="${err}"></div>
   </div>
   <div class="mb-3">
-    <label class="form-label">Название</label>
+    <label class="form-label" for="name">Название</label>
     <input type="text" th:field="*{name}" class="form-control" required autofocus/>
   </div>
 

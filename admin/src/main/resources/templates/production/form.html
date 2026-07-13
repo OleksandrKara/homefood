@@ -22,29 +22,29 @@
   </div>
 
   <div class="mb-3">
-    <label class="form-label">Товар</label>
-    <select name="productId" class="form-select" required>
+    <label class="form-label" for="productId">Товар</label>
+    <select id="productId" name="productId" class="form-select" required>
       <option value="">— выберите товар —</option>
       <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name} + ' ' + ${p.sizeLabel}"
               th:selected="${batch.product != null and batch.product.id == p.id}"></option>
     </select>
   </div>
   <div class="mb-3">
-    <label class="form-label">Сколько банок</label>
+    <label class="form-label" for="quantityProduced">Сколько банок</label>
     <input type="number" min="1" th:field="*{quantityProduced}" class="form-control" required/>
   </div>
   <div class="mb-3">
-    <label class="form-label">Дата</label>
+    <label class="form-label" for="batchDate">Дата</label>
     <input type="date" th:field="*{batchDate}" class="form-control" required/>
   </div>
 
   <div id="pickup-fields">
     <div class="mb-3">
-      <label class="form-label">Место самовывоза</label>
+      <label class="form-label" for="pickupLocation">Место самовывоза</label>
       <input type="text" th:field="*{pickupLocation}" class="form-control" placeholder="напр. San Diego, Downtown"/>
     </div>
     <div class="mb-3">
-      <label class="form-label">Время самовывоза</label>
+      <label class="form-label" for="pickupWindow">Время самовывоза</label>
       <input type="text" th:field="*{pickupWindow}" class="form-control" placeholder="напр. среда 14:00-18:00"/>
     </div>
     <div style="font-size:0.85rem; color:#868e96; margin-bottom:12px;">
@@ -53,7 +53,7 @@
   </div>
 
   <div class="mb-3">
-    <label class="form-label">Заметки</label>
+    <label class="form-label" for="notes">Заметки</label>
     <textarea th:field="*{notes}" class="form-control" placeholder="необязательно"></textarea>
   </div>
 
