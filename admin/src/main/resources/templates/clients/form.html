@@ -10,19 +10,19 @@
     <div th:each="err : ${#fields.errors('*')}" th:text="${err}"></div>
   </div>
   <div class="mb-3">
-    <label class="form-label">Имя</label>
+    <label class="form-label" for="name">Имя</label>
     <input type="text" th:field="*{name}" class="form-control" required autofocus/>
   </div>
   <div class="mb-3">
-    <label class="form-label">Телефон</label>
+    <label class="form-label" for="phone">Телефон</label>
     <input type="tel" th:field="*{phone}" class="form-control" placeholder="+1 555 123 4567"/>
   </div>
   <div class="mb-3">
-    <label class="form-label">Адрес</label>
+    <label class="form-label" for="address">Адрес</label>
     <input type="text" th:field="*{address}" class="form-control" list="address-suggestions" autocomplete="off"/>
   </div>
   <div class="mb-3">
-    <label class="form-label">Заметки</label>
+    <label class="form-label" for="notes">Заметки</label>
     <textarea th:field="*{notes}" class="form-control"></textarea>
   </div>
 

@@ -12,8 +12,8 @@
   </div>
 
   <div class="mb-3">
-    <label class="form-label">Клиент</label>
-    <select name="clientId" class="form-select" required>
+    <label class="form-label" for="clientId">Клиент</label>
+    <select id="clientId" name="clientId" class="form-select" required>
       <option value="">— выберите клиента —</option>
       <option th:each="c : ${clients}" th:value="${c.id}"
               th:text="${c.name} + (${c.phone} != null ? ' — ' + ${c.phone} : '')"
@@ -23,7 +23,7 @@
   </div>
 
   <div class="mb-3">
-    <label class="form-label">Товар</label>
+    <label class="form-label" for="product-select">Товар</label>
     <select id="product-select" name="productId" class="form-select" required>
       <option th:each="p : ${products}" th:value="${p.id}" th:attr="data-price=${p.basePrice}"
               th:text="${p.name} + ' ' + ${p.sizeLabel} + ' — $' + ${#numbers.formatDecimal(p.basePrice, 1, 2)} + '/банка'"
@@ -32,7 +32,7 @@
   </div>
 
   <div class="mb-3">
-    <label class="form-label">Количество банок</label>
+    <label class="form-label" for="quantity-input">Количество банок</label>
     <input type="number" min="1" id="quantity-input" th:field="*{quantity}" class="form-control" required/>
     <div id="price-estimate" class="mt-2" style="font-size:1.05rem; font-weight:600;"></div>
   </div>
@@ -51,7 +51,7 @@
 
   <div id="delivery-fields">
     <div class="mb-3">
-      <label class="form-label">Район</label>
+      <label class="form-label" for="district">Район</label>
       <select th:field="*{district}" class="form-select">
         <option value="">— выберите район —</option>
         <option th:each="d : ${districts}" th:value="${d.name}" th:text="${d.name}"></option>
@@ -61,11 +61,11 @@
       <a th:href="@{/districts/new}" target="_blank" class="d-inline-block mt-2" style="font-size:0.9rem;">+ Новый район (в новой вкладке)</a>
     </div>
     <div class="mb-3">
-      <label class="form-label">Адрес доставки</label>
+      <label class="form-label" for="deliveryAddress">Адрес доставки</label>
       <input type="text" th:field="*{deliveryAddress}" class="form-control" list="address-suggestions" autocomplete="off"/>
     </div>
     <div class="mb-3">
-      <label class="form-label">Детали доставки</label>
+      <label class="form-label" for="deliveryDetails">Детали доставки</label>
       <textarea th:field="*{deliveryDetails}" class="form-control" placeholder="этаж, домофон, инструкции..."></textarea>
     </div>
   </div>
@@ -76,17 +76,17 @@
 
   <div class="row mb-3">
     <div class="col-6">
-      <label class="form-label">Дата</label>
+      <label class="form-label" for="deliveryDate">Дата</label>
       <input type="date" th:field="*{deliveryDate}" class="form-control"/>
     </div>
     <div class="col-6">
-      <label class="form-label">Время</label>
+      <label class="form-label" for="deliveryTime">Время</label>
       <input type="time" th:field="*{deliveryTime}" class="form-control"/>
     </div>
   </div>
 
   <div class="mb-3">
-    <label class="form-label">Статус</label>
+    <label class="form-label" for="status-select">Статус</label>
     <select id="status-select" th:field="*{status}" class="form-select">
       <option th:each="s : ${statuses}" th:value="${s}"
               th:text="${s.name() == 'REQUESTED' ? 'Заявка (не подтверждён)' : (s.name() == 'NEW' ? 'Новый' : (s.name() == 'DONE' ? 'Готово' : 'Отменён'))}"></option>
@@ -94,7 +94,7 @@
   </div>
 
   <div id="payment-method-field" class="mb-3">
-    <label class="form-label">Оплата</label>
+    <label class="form-label" for="paymentMethod">Оплата</label>
     <select th:field="*{paymentMethod}" class="form-select">
       <option value="">— способ оплаты —</option>
       <option th:each="pm : ${paymentMethods}" th:value="${pm.name}" th:text="${pm.name}"></option>
@@ -105,7 +105,7 @@
   </div>
 
   <div class="mb-3">
-    <label class="form-label">Заметки</label>
+    <label class="form-label" for="notes">Заметки</label>
     <textarea th:field="*{notes}" class="form-control" placeholder="любая дополнительная информация..."></textarea>
   </div>
 
