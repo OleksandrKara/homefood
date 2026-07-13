@@ -18,6 +18,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -28,6 +29,10 @@ import java.util.Set;
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 public class OrderController {
+
+    // The business operates in PST/PDT; the container runs in UTC, so "today"/"tomorrow"
+    // must be computed in the business's zone, not the server's default zone.
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Los_Angeles");
 
     private static final String[] MONTHS_RU = {
             "", "января", "февраля", "марта", "апреля", "мая", "июня",
@@ -146,7 +151,7 @@ public class OrderController {
         if (date == null) {
             return "Без даты";
         }
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(BUSINESS_ZONE);
         if (date.equals(today)) {
             return "Сегодня";
         }

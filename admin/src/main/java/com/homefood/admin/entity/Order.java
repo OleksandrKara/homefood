@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -45,9 +46,11 @@ public class Order {
     private String deliveryDetails;
 
     @Column(name = "delivery_date")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate deliveryDate;
 
     @Column(name = "delivery_time")
+    @DateTimeFormat(pattern = "HH:mm")
     private LocalTime deliveryTime;
 
     @Enumerated(EnumType.STRING)
