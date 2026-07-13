@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Обработанные')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title='Обработанные')}"></div>
+
+<div class="form-page" style="padding-bottom:0;">
+  <a th:href="@{/orders}" style="font-size:0.9rem;">‹ Назад к заказам</a>
+</div>
+
+<div class="card-list">
+  <th:block th:each="o : ${orders}">
+    <div th:replace="~{fragments/order-card :: card(o=${o}, returnTo='/orders/processed')}"></div>
+  </th:block>
+
+  <div th:if="${#lists.isEmpty(orders)}" class="empty-state">
+    <div class="icon">📦</div>
+    Здесь появятся готовые и отменённые заказы.
+  </div>
+</div>
+
+<div th:replace="~{fragments/layout :: bottomnav(active='orders')}"></div>
+<div th:replace="~{fragments/order-card :: swipe-script}"></div>
+</body>
+</html>

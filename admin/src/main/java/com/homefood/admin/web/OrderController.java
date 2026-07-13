@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,6 +35,8 @@ public class OrderController {
     // The business operates in PST/PDT; the container runs in UTC, so "today"/"tomorrow"
     // must be computed in the business's zone, not the server's default zone.
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Los_Angeles");
+
+    private static final List<OrderStatus> PROCESSED_STATUSES = List.of(OrderStatus.DONE, OrderStatus.CANCELLED);
 
     private static final String[] MONTHS_RU = {
             "", "января", "февраля", "марта", "апреля", "мая", "июня",
@@ -54,31 +57,64 @@ public class OrderController {
         List<Order> all = orderRepository.findAllByOrderByDeliveryDateAscDeliveryTimeAsc();
 
         Map<String, Map<String, List<Order>>> grouped = new LinkedHashMap<>();
-        List<Order> requested = new java.util.ArrayList<>();
-        List<Order> done = new java.util.ArrayList<>();
+        List<Order> requested = new ArrayList<>();
 
         for (Order o : all) {
+            if (o.isArchived()) {
+                continue;
+            }
             if (o.getStatus() == OrderStatus.REQUESTED) {
                 requested.add(o);
                 continue;
             }
-            if (o.getStatus() == OrderStatus.DONE) {
-                done.add(o);
-                continue;
+            if (PROCESSED_STATUSES.contains(o.getStatus())) {
+                continue; // shown on /orders/processed instead
             }
             String dateLabel = formatDateLabel(o.getDeliveryDate());
             String subLabel = o.getDeliveryType() == DeliveryType.PICKUP
                     ? "🏠 Самовывоз"
                     : (o.getDistrict() != null && !o.getDistrict().isBlank() ? o.getDistrict() : "Без района");
             grouped.computeIfAbsent(dateLabel, k -> new LinkedHashMap<>())
-                    .computeIfAbsent(subLabel, k -> new java.util.ArrayList<>())
+                    .computeIfAbsent(subLabel, k -> new ArrayList<>())
                     .add(o);
         }
 
         model.addAttribute("requestedOrders", requested);
         model.addAttribute("groupedOrders", grouped);
-        model.addAttribute("doneOrders", done);
+        model.addAttribute("soldTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.DONE));
+        model.addAttribute("expectedTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.NEW));
+        model.addAttribute("processedCount", orderRepository.countByArchivedFalseAndStatusIn(PROCESSED_STATUSES));
+        model.addAttribute("archivedCount", orderRepository.countByArchivedTrue());
         return "orders/list";
+    }
+
+    @GetMapping("/processed")
+    public String processed(Model model) {
+        model.addAttribute("orders",
+                orderRepository.findByArchivedFalseAndStatusInOrderByDeliveryDateDescCreatedAtDesc(PROCESSED_STATUSES));
+        return "orders/processed";
+    }
+
+    @GetMapping("/archive")
+    public String archive(Model model) {
+        model.addAttribute("orders", orderRepository.findByArchivedTrueOrderByDeliveryDateDescCreatedAtDesc());
+        return "orders/archive";
+    }
+
+    @PostMapping("/{id}/archive")
+    public String archiveOrder(@PathVariable Long id, @RequestParam(defaultValue = "/orders") String returnTo) {
+        Order order = orderRef(id);
+        order.setArchived(true);
+        orderRepository.save(order);
+        return "redirect:" + sanitizeReturnTo(returnTo);
+    }
+
+    @PostMapping("/{id}/unarchive")
+    public String unarchiveOrder(@PathVariable Long id, @RequestParam(defaultValue = "/orders/archive") String returnTo) {
+        Order order = orderRef(id);
+        order.setArchived(false);
+        orderRepository.save(order);
+        return "redirect:" + sanitizeReturnTo(returnTo);
     }
 
     @GetMapping("/new")
@@ -107,8 +143,7 @@ public class OrderController {
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
+        Order order = orderRef(id);
         addFormAttributes(model, order.getProduct());
         model.addAttribute("order", order);
         return "orders/form";
@@ -117,8 +152,7 @@ public class OrderController {
     @PostMapping("/{id}")
     public String update(@PathVariable Long id, @Valid @ModelAttribute("order") Order order, BindingResult result,
                           @RequestParam Long clientId, @RequestParam Long productId, Model model) {
-        Order existing = orderRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
+        Order existing = orderRef(id);
         if (result.hasErrors()) {
             addFormAttributes(model, existing.getProduct());
             return "orders/form";
@@ -126,11 +160,17 @@ public class OrderController {
         Product product = productRef(productId);
         order.setId(id);
         order.setCreatedAt(existing.getCreatedAt());
+        order.setArchived(existing.isArchived());
         order.setClient(clientRef(clientId));
         order.setProduct(product);
         order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), order.getQuantity()));
         orderRepository.save(order);
         return "redirect:/orders";
+    }
+
+    private Order orderRef(Long id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
     }
 
     private Client clientRef(Long id) {
@@ -145,7 +185,7 @@ public class OrderController {
 
     /** Active products, plus the currently-assigned one even if it's been deactivated since. */
     private List<Product> selectableProducts(Product currentProduct) {
-        List<Product> products = new java.util.ArrayList<>(productRepository.findAllByActiveTrueOrderByNameAsc());
+        List<Product> products = new ArrayList<>(productRepository.findAllByActiveTrueOrderByNameAsc());
         if (currentProduct != null && !currentProduct.isActive()) {
             products.add(currentProduct);
         }
@@ -181,5 +221,13 @@ public class OrderController {
             return "Завтра";
         }
         return date.getDayOfMonth() + " " + MONTHS_RU[date.getMonthValue()] + ", " + DOW_RU[date.getDayOfWeek().getValue()];
+    }
+
+    /** Whitelist redirect target so a crafted form field can't send an admin off-app. */
+    private String sanitizeReturnTo(String returnTo) {
+        if ("/orders/processed".equals(returnTo) || "/orders/archive".equals(returnTo)) {
+            return returnTo;
+        }
+        return "/orders";
     }
 }
