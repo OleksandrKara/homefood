@@ -3,6 +3,7 @@ package com.homefood.admin.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -41,11 +42,14 @@ public class Order {
     @Column(name = "delivery_type", nullable = false)
     private DeliveryType deliveryType = DeliveryType.PICKUP;
 
+    @Size(max = 500, message = "Слишком длинный адрес")
     @Column(name = "delivery_address")
     private String deliveryAddress;
 
+    @Size(max = 255, message = "Слишком длинный район")
     private String district;
 
+    @Size(max = 2000, message = "Слишком длинный текст")
     @Column(name = "delivery_details", columnDefinition = "TEXT")
     private String deliveryDetails;
 
@@ -64,9 +68,11 @@ public class Order {
     @Column(name = "total_price")
     private BigDecimal totalPrice;
 
+    @Size(max = 50, message = "Слишком длинный способ оплаты")
     @Column(name = "payment_method")
     private String paymentMethod;
 
+    @Size(max = 2000, message = "Слишком длинный текст")
     @Column(columnDefinition = "TEXT")
     private String notes;
 

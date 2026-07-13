@@ -49,6 +49,13 @@
     <p class="hint">Мы свяжемся с вами, чтобы подтвердить заказ и самовывоз.</p>
 
     <form th:action="@{/shop/reserve}" method="post">
+      <!-- Honeypot: invisible to real visitors, but basic bots that auto-fill every field will
+           trip it. Left completely empty by a human, so a non-empty value means "not human". -->
+      <div style="position:absolute; left:-9999px; top:-9999px;" aria-hidden="true">
+        <label for="shop-website">Website</label>
+        <input type="text" id="shop-website" name="website" tabindex="-1" autocomplete="off"/>
+      </div>
+
       <div class="mb-3">
         <label class="form-label" for="shop-name">Ваше имя</label>
         <input type="text" id="shop-name" name="name" class="form-control" required autofocus/>

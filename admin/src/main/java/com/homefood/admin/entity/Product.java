@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -22,9 +23,11 @@ public class Product {
     private Long id;
 
     @NotBlank(message = "Укажите название")
+    @Size(max = 255, message = "Слишком длинное название")
     @Column(nullable = false)
     private String name;
 
+    @Size(max = 50, message = "Слишком длинный размер")
     @Column(name = "size_label")
     private String sizeLabel;
 
