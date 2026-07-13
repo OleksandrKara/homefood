@@ -8,16 +8,27 @@
   <div th:each="b : ${batches}" class="item-card">
     <div class="row-top">
       <span class="title" th:text="${#temporals.format(b.batchDate, 'dd.MM.yyyy')}"></span>
-      <span class="badge-status badge-status-DONE" th:text="'+' + ${b.quantityProduced} + ' шт'"></span>
+      <span class="badge-status" th:classappend="${b.status.name() == 'PLANNED'} ? 'badge-status-NEW' : 'badge-status-DONE'"
+            th:text="(${b.status.name() == 'PLANNED'} ? '🗓 план ' : '✅ ') + '+' + ${b.quantityProduced} + ' шт'"></span>
     </div>
     <div class="subtitle" th:text="${b.product.name} + ' ' + ${b.product.sizeLabel}"></div>
+    <div class="meta" th:if="${b.pickupLocation != null and !b.pickupLocation.isEmpty()}">
+      <span th:text="'📍 ' + ${b.pickupLocation}"></span>
+      <span th:if="${b.pickupWindow != null and !b.pickupWindow.isEmpty()}" th:text="'🕒 ' + ${b.pickupWindow}"></span>
+    </div>
     <div class="meta" th:if="${b.notes != null and !b.notes.isEmpty()}">
       <span th:text="${b.notes}"></span>
     </div>
-    <form th:action="@{'/production/' + ${b.id} + '/delete'}" method="post" class="mt-2">
-      <button type="submit" class="btn btn-outline-danger btn-sm"
-              onclick="return confirm('Удалить запись о партии? Списанное сырьё и готовая продукция вернутся обратно на склад.');">Удалить</button>
-    </form>
+    <div class="quick-actions" style="margin-top:10px;">
+      <form th:if="${b.status.name() == 'PLANNED'}" th:action="@{'/production/' + ${b.id} + '/complete'}" method="post" style="flex:1;">
+        <button type="submit" class="btn btn-dark btn-sm w-100"
+                onclick="return confirm('Отметить партию готовой? Спишется сырьё и пополнится готовая продукция.');">Отметить готовой</button>
+      </form>
+      <form th:action="@{'/production/' + ${b.id} + '/delete'}" method="post" style="flex:1;">
+        <button type="submit" class="btn btn-outline-danger btn-sm w-100"
+                onclick="return confirm('Удалить запись о партии?');">Удалить</button>
+      </form>
+    </div>
   </div>
 
   <div th:if="${#lists.isEmpty(batches)}" class="empty-state">

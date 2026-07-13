@@ -54,9 +54,14 @@ public class OrderController {
         List<Order> all = orderRepository.findAllByOrderByDeliveryDateAscDeliveryTimeAsc();
 
         Map<String, Map<String, List<Order>>> grouped = new LinkedHashMap<>();
+        List<Order> requested = new java.util.ArrayList<>();
         List<Order> done = new java.util.ArrayList<>();
 
         for (Order o : all) {
+            if (o.getStatus() == OrderStatus.REQUESTED) {
+                requested.add(o);
+                continue;
+            }
             if (o.getStatus() == OrderStatus.DONE) {
                 done.add(o);
                 continue;
@@ -70,6 +75,7 @@ public class OrderController {
                     .add(o);
         }
 
+        model.addAttribute("requestedOrders", requested);
         model.addAttribute("groupedOrders", grouped);
         model.addAttribute("doneOrders", done);
         return "orders/list";

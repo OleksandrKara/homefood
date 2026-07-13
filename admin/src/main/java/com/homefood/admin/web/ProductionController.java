@@ -1,5 +1,6 @@
 package com.homefood.admin.web;
 
+import com.homefood.admin.entity.BatchStatus;
 import com.homefood.admin.entity.Ingredient;
 import com.homefood.admin.entity.Product;
 import com.homefood.admin.entity.ProductionBatch;
@@ -53,7 +54,22 @@ public class ProductionController {
                 .orElseThrow(() -> new IllegalArgumentException("Product not found: " + productId));
         batch.setProduct(product);
         productionBatchRepository.save(batch);
-        applyProduction(batch);
+        if (batch.getStatus() == BatchStatus.DONE) {
+            applyProduction(batch);
+        }
+        return "redirect:/production";
+    }
+
+    /** A planned batch actually happened - apply its stock effects now. */
+    @PostMapping("/{id}/complete")
+    public String complete(@PathVariable Long id) {
+        ProductionBatch batch = productionBatchRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Production batch not found: " + id));
+        if (batch.getStatus() == BatchStatus.PLANNED) {
+            batch.setStatus(BatchStatus.DONE);
+            productionBatchRepository.save(batch);
+            applyProduction(batch);
+        }
         return "redirect:/production";
     }
 
@@ -61,7 +77,9 @@ public class ProductionController {
     public String delete(@PathVariable Long id) {
         ProductionBatch batch = productionBatchRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Production batch not found: " + id));
-        reverseProduction(batch);
+        if (batch.getStatus() == BatchStatus.DONE) {
+            reverseProduction(batch);
+        }
         productionBatchRepository.deleteById(id);
         return "redirect:/production";
     }
