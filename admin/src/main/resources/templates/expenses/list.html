@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Расходы')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title='Расходы')}"></div>
+
+<div class="card-list" style="margin-bottom: 4px;">
+  <div class="item-card" style="display:flex; gap:10px;">
+    <a th:href="@{/ingredients}" style="flex:1; text-decoration:none; color:inherit; text-align:center;">
+      <div style="font-size:1.5rem;">📦</div>
+      <div class="subtitle">Склад</div>
+    </a>
+    <a th:href="@{/production}" style="flex:1; text-decoration:none; color:inherit; text-align:center;">
+      <div style="font-size:1.5rem;">🏭</div>
+      <div class="subtitle">Партии</div>
+    </a>
+  </div>
+  <div class="item-card">
+    <div class="row-top">
+      <span class="subtitle">Инвестиции (всего)</span>
+      <span class="title" th:text="'$' + ${#numbers.formatDecimal(investmentTotal, 1, 2)}"></span>
+    </div>
+    <div class="row-top">
+      <span class="subtitle">Операционные (всего)</span>
+      <span class="title" th:text="'$' + ${#numbers.formatDecimal(operationalTotal, 1, 2)}"></span>
+    </div>
+  </div>
+</div>
+
+<div class="card-list">
+  <a th:each="e : ${expenses}" th:href="@{'/expenses/' + ${e.id} + '/edit'}" class="item-card">
+    <div class="row-top">
+      <span class="title" th:text="${#temporals.format(e.expenseDate, 'dd.MM.yyyy')}"></span>
+      <span class="badge-status" th:classappend="${e.category.name() == 'INVESTMENT'} ? 'badge-status-NEW' : 'badge-status-DONE'"
+            th:text="${e.category.name() == 'INVESTMENT'} ? 'Инвестиция' : 'Операционные'"></span>
+    </div>
+    <div class="subtitle" th:text="${e.description}"></div>
+    <div class="meta">
+      <span th:text="'$' + ${#numbers.formatDecimal(e.amount, 1, 2)}"></span>
+      <span th:if="${e.ingredient != null and e.quantity != null}"
+            th:text="${#numbers.formatDecimal(e.quantity, 1, 2)} + ' ' + ${e.ingredient.unit} + ' ' + ${e.ingredient.name}"></span>
+    </div>
+  </a>
+
+  <div th:if="${#lists.isEmpty(expenses)}" class="empty-state">
+    <div class="icon">💰</div>
+    Расходов пока нет.
+  </div>
+</div>
+
+<a th:href="@{/expenses/new}" class="fab" aria-label="Новый расход">+</a>
+
+<div th:replace="~{fragments/layout :: bottomnav(active='expenses')}"></div>
+</body>
+</html>

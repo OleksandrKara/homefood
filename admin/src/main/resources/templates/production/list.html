@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Партии')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title='Партии')}"></div>
+
+<div class="card-list">
+  <div th:each="b : ${batches}" class="item-card">
+    <div class="row-top">
+      <span class="title" th:text="${#temporals.format(b.batchDate, 'dd.MM.yyyy')}"></span>
+      <span class="badge-status badge-status-DONE" th:text="'+' + ${b.quantityProduced} + ' шт'"></span>
+    </div>
+    <div class="subtitle" th:text="${b.product.name} + ' ' + ${b.product.sizeLabel}"></div>
+    <div class="meta" th:if="${b.notes != null and !b.notes.isEmpty()}">
+      <span th:text="${b.notes}"></span>
+    </div>
+    <form th:action="@{'/production/' + ${b.id} + '/delete'}" method="post" class="mt-2">
+      <button type="submit" class="btn btn-outline-danger btn-sm"
+              onclick="return confirm('Удалить запись о партии? Списанное сырьё и готовая продукция вернутся обратно на склад.');">Удалить</button>
+    </form>
+  </div>
+
+  <div th:if="${#lists.isEmpty(batches)}" class="empty-state">
+    <div class="icon">🏭</div>
+    Партий пока нет.
+  </div>
+</div>
+
+<a th:href="@{/production/new}" class="fab" aria-label="Новая партия">+</a>
+
+<div th:replace="~{fragments/layout :: bottomnav(active='expenses')}"></div>
+</body>
+</html>

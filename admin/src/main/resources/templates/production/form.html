@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Новая партия')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title='Новая партия')}"></div>
+
+<form th:action="@{/production}" th:object="${batch}" method="post" class="form-page">
+  <div class="mb-3">
+    <label class="form-label">Товар</label>
+    <select name="productId" class="form-select" required>
+      <option value="">— выберите товар —</option>
+      <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name} + ' ' + ${p.sizeLabel}"></option>
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Сколько банок сделали</label>
+    <input type="number" min="1" th:field="*{quantityProduced}" class="form-control" required/>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Дата</label>
+    <input type="date" th:field="*{batchDate}" class="form-control" required/>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Заметки</label>
+    <textarea th:field="*{notes}" class="form-control" placeholder="необязательно"></textarea>
+  </div>
+
+  <div style="font-size:0.85rem; color:#868e96; margin-bottom:12px;">
+    Сохранение спишет сырьё по рецепту товара и пополнит остаток готовой продукции.
+  </div>
+
+  <div class="sticky-save-bar">
+    <a th:href="@{/production}" class="btn btn-outline-secondary">Отмена</a>
+    <button type="submit" class="btn btn-dark">Сохранить</button>
+  </div>
+</form>
+</body>
+</html>
