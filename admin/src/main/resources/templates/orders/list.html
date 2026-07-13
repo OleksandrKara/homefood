@@ -4,11 +4,22 @@
 <body>
 <div th:replace="~{fragments/layout :: topbar(title='Заказы')}"></div>
 
+<div class="stats-block">
+  <div class="stats-card sold">
+    <div class="stats-label">💰 Продано</div>
+    <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(soldTotal, 1, 2)}"></div>
+  </div>
+  <div class="stats-card expected">
+    <div class="stats-label">⏳ Ожидается</div>
+    <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(expectedTotal, 1, 2)}"></div>
+  </div>
+</div>
+
 <div th:if="${!#lists.isEmpty(requestedOrders)}">
   <h2 class="group-header">🔔 Новые заявки</h2>
   <div class="card-list">
     <th:block th:each="o : ${requestedOrders}">
-      <div th:replace="~{fragments/order-card :: card(o=${o})}"></div>
+      <div th:replace="~{fragments/order-card :: card(o=${o}, returnTo='/orders')}"></div>
     </th:block>
   </div>
 </div>
@@ -19,28 +30,35 @@
     <h3 class="subgroup-header" th:text="${subEntry.key}"></h3>
     <div class="card-list">
       <th:block th:each="o : ${subEntry.value}">
-        <div th:replace="~{fragments/order-card :: card(o=${o})}"></div>
+        <div th:replace="~{fragments/order-card :: card(o=${o}, returnTo='/orders')}"></div>
       </th:block>
     </div>
   </div>
 </div>
 
-<div th:if="${#lists.isEmpty(requestedOrders) and #maps.isEmpty(groupedOrders) and #lists.isEmpty(doneOrders)}" class="empty-state">
+<div th:if="${#lists.isEmpty(requestedOrders) and #maps.isEmpty(groupedOrders)}" class="empty-state">
   <div class="icon">📦</div>
-  Заказов пока нет.<br/>Нажмите «+», чтобы добавить первый.
+  Активных заказов пока нет.<br/>Нажмите «+», чтобы добавить первый.
 </div>
 
-<div th:if="${!#lists.isEmpty(doneOrders)}">
-  <h2 class="group-header">✅ Готово</h2>
-  <div class="card-list">
-    <th:block th:each="o : ${doneOrders}">
-      <div th:replace="~{fragments/order-card :: card(o=${o})}"></div>
-    </th:block>
-  </div>
+<div class="nav-link-list">
+  <a th:href="@{/orders/processed}" class="nav-link-card">
+    <span class="nav-link-icon">📦</span>
+    <span class="nav-link-label">Обработанные</span>
+    <span class="count-badge" th:text="${processedCount}"></span>
+    <span class="chevron">›</span>
+  </a>
+  <a th:href="@{/orders/archive}" class="nav-link-card">
+    <span class="nav-link-icon">🗄</span>
+    <span class="nav-link-label">Архив</span>
+    <span class="count-badge" th:text="${archivedCount}"></span>
+    <span class="chevron">›</span>
+  </a>
 </div>
 
 <a th:href="@{/orders/new}" class="fab" aria-label="Новый заказ">+</a>
 
 <div th:replace="~{fragments/layout :: bottomnav(active='orders')}"></div>
+<div th:replace="~{fragments/order-card :: swipe-script}"></div>
 </body>
 </html>

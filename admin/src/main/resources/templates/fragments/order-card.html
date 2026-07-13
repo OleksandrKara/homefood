@@ -1,22 +1,88 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<a th:fragment="card(o)" th:href="@{'/orders/' + ${o.id} + '/edit'}" class="item-card">
-  <div class="row-top">
-    <span class="title" th:text="${o.deliveryDate != null ? #temporals.format(o.deliveryDate, 'dd.MM') : 'без даты'} + (${o.deliveryTime} != null ? ' · ' + ${#temporals.format(o.deliveryTime, 'HH:mm')} : '')"></span>
-    <span class="badge-status" th:classappend="'badge-status-' + ${o.status}"
-          th:text="${o.status.name() == 'REQUESTED' ? '🔔 Заявка' : (o.status.name() == 'NEW' ? 'Новый' : (o.status.name() == 'DONE' ? 'Готово' : 'Отменён'))}"></span>
-  </div>
-  <div class="subtitle" th:text="${o.client.name}"></div>
-  <div class="subtitle" th:text="${o.product.name} + ' ' + ${o.product.sizeLabel} + ' · ' + ${o.quantity} + ' шт' + (${o.totalPrice} != null ? ' · $' + ${#numbers.formatDecimal(o.totalPrice, 1, 2)} : '')"></div>
-  <div class="meta">
-    <span th:text="${o.deliveryType.name() == 'PICKUP'} ? '🏠 Самовывоз' : '🚚 Доставка'"></span>
-    <span th:if="${o.deliveryType.name() == 'DELIVERY' and o.district != null and !o.district.isEmpty()}" th:text="${o.district}"></span>
-    <span th:if="${o.paymentMethod != null and !o.paymentMethod.isEmpty()}" th:text="'💳 ' + ${o.paymentMethod}"></span>
-  </div>
-  <div class="meta" th:if="${o.notes != null and !o.notes.isEmpty()}">
-    <span>📝 <span th:text="${o.notes}"></span></span>
-  </div>
-</a>
+<div th:fragment="card(o, returnTo)" class="swipe-item">
+
+  <form th:if="${!o.archived}" th:action="@{'/orders/' + ${o.id} + '/archive'}" method="post" class="swipe-action swipe-action-archive">
+    <input type="hidden" name="returnTo" th:value="${returnTo}"/>
+    <button type="submit">🗄<span>Архив</span></button>
+  </form>
+  <form th:if="${o.archived}" th:action="@{'/orders/' + ${o.id} + '/unarchive'}" method="post" class="swipe-action swipe-action-restore">
+    <input type="hidden" name="returnTo" th:value="${returnTo}"/>
+    <button type="submit">↩<span>Вернуть</span></button>
+  </form>
+
+  <a data-swipe th:href="@{'/orders/' + ${o.id} + '/edit'}" class="item-card swipe-content">
+    <div class="row-top">
+      <span class="title" th:text="${o.deliveryDate != null ? #temporals.format(o.deliveryDate, 'dd.MM') : 'без даты'} + (${o.deliveryTime} != null ? ' · ' + ${#temporals.format(o.deliveryTime, 'HH:mm')} : '')"></span>
+      <span class="badge-status" th:classappend="'badge-status-' + ${o.status}"
+            th:text="${o.status.name() == 'REQUESTED' ? '🔔 Заявка' : (o.status.name() == 'NEW' ? 'Новый' : (o.status.name() == 'DONE' ? 'Готово' : 'Отменён'))}"></span>
+    </div>
+    <div class="subtitle" th:text="${o.client.name}"></div>
+    <div class="subtitle" th:text="${o.product.name} + ' ' + ${o.product.sizeLabel} + ' · ' + ${o.quantity} + ' шт' + (${o.totalPrice} != null ? ' · $' + ${#numbers.formatDecimal(o.totalPrice, 1, 2)} : '')"></div>
+    <div class="meta">
+      <span th:text="${o.deliveryType.name() == 'PICKUP'} ? '🏠 Самовывоз' : '🚚 Доставка'"></span>
+      <span th:if="${o.deliveryType.name() == 'DELIVERY' and o.district != null and !o.district.isEmpty()}" th:text="${o.district}"></span>
+      <span th:if="${o.paymentMethod != null and !o.paymentMethod.isEmpty()}" th:text="'💳 ' + ${o.paymentMethod}"></span>
+    </div>
+    <div class="meta" th:if="${o.notes != null and !o.notes.isEmpty()}">
+      <span>📝 <span th:text="${o.notes}"></span></span>
+    </div>
+  </a>
+</div>
+
+<script th:fragment="swipe-script">
+  (function () {
+    var THRESHOLD = 48;
+    var REVEAL = 96;
+    document.querySelectorAll('[data-swipe]').forEach(function (el) {
+      var startX = 0, deltaX = 0, dragging = false, swiped = false, moved = false;
+
+      el.addEventListener('touchstart', function (e) {
+        startX = e.touches[0].clientX;
+        deltaX = 0;
+        moved = false;
+        dragging = true;
+        el.style.transition = 'none';
+      }, { passive: true });
+
+      el.addEventListener('touchmove', function (e) {
+        if (!dragging) return;
+        deltaX = e.touches[0].clientX - startX;
+        if (Math.abs(deltaX) > 8) {
+          moved = true;
+          var base = swiped ? -REVEAL : 0;
+          var next = Math.min(0, Math.max(-REVEAL, base + deltaX));
+          el.style.transform = 'translateX(' + next + 'px)';
+        }
+      }, { passive: true });
+
+      el.addEventListener('touchend', function () {
+        dragging = false;
+        el.style.transition = 'transform 0.2s ease';
+        var base = swiped ? -REVEAL : 0;
+        var finalPos = base + deltaX;
+        if (finalPos < -THRESHOLD) {
+          el.style.transform = 'translateX(-' + REVEAL + 'px)';
+          swiped = true;
+        } else {
+          el.style.transform = 'translateX(0)';
+          swiped = false;
+        }
+      });
+
+      el.addEventListener('click', function (e) {
+        if (moved || swiped) {
+          e.preventDefault();
+          if (swiped) {
+            el.style.transition = 'transform 0.2s ease';
+            el.style.transform = 'translateX(0)';
+            swiped = false;
+          }
+        }
+      });
+    });
+  })();
+</script>
 </body>
 </html>

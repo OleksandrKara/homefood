@@ -66,6 +66,9 @@ public class Order {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(nullable = false)
+    private boolean archived = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 }
