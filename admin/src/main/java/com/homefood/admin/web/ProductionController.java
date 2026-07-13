@@ -17,6 +17,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 @RequestMapping("/production")
@@ -39,7 +41,7 @@ public class ProductionController {
         ProductionBatch batch = new ProductionBatch();
         batch.setQuantityProduced(1);
         model.addAttribute("batch", batch);
-        model.addAttribute("products", productRepository.findAllByActiveTrueOrderByNameAsc());
+        model.addAttribute("products", selectableProducts(null));
         return "production/form";
     }
 
@@ -47,11 +49,51 @@ public class ProductionController {
     public String create(@Valid @ModelAttribute("batch") ProductionBatch batch, BindingResult result,
                           @RequestParam Long productId, Model model) {
         if (result.hasErrors()) {
-            model.addAttribute("products", productRepository.findAllByActiveTrueOrderByNameAsc());
+            model.addAttribute("products", selectableProducts(null));
             return "production/form";
         }
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found: " + productId));
+        batch.setProduct(product);
+        productionBatchRepository.save(batch);
+        if (batch.getStatus() == BatchStatus.DONE) {
+            applyProduction(batch);
+        }
+        return "redirect:/production";
+    }
+
+    @GetMapping("/{id}/edit")
+    public String editForm(@PathVariable Long id, Model model) {
+        ProductionBatch batch = productionBatchRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Production batch not found: " + id));
+        model.addAttribute("batch", batch);
+        model.addAttribute("products", selectableProducts(batch.getProduct()));
+        return "production/form";
+    }
+
+    /**
+     * Reverses the old DONE effect (if any) and reapplies the new one (if now DONE) - correctly
+     * handles a plain quantity/product correction, a status flip in either direction, or both at
+     * once. Note: reversal uses the *current* recipe, not whatever it was when originally logged -
+     * an acceptable tradeoff since recipes rarely change, versus not being able to fix a mistyped
+     * quantity at all.
+     */
+    @PostMapping("/{id}")
+    public String update(@PathVariable Long id, @Valid @ModelAttribute("batch") ProductionBatch batch, BindingResult result,
+                          @RequestParam Long productId, Model model) {
+        ProductionBatch existing = productionBatchRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Production batch not found: " + id));
+        if (result.hasErrors()) {
+            model.addAttribute("products", selectableProducts(existing.getProduct()));
+            return "production/form";
+        }
+        if (existing.getStatus() == BatchStatus.DONE) {
+            reverseProduction(existing);
+        }
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found: " + productId));
+        batch.setId(id);
+        batch.setCreatedAt(existing.getCreatedAt());
         batch.setProduct(product);
         productionBatchRepository.save(batch);
         if (batch.getStatus() == BatchStatus.DONE) {
@@ -82,6 +124,15 @@ public class ProductionController {
         }
         productionBatchRepository.deleteById(id);
         return "redirect:/production";
+    }
+
+    /** Active products, plus the currently-assigned one even if it's been deactivated since. */
+    private List<Product> selectableProducts(Product currentProduct) {
+        List<Product> products = new ArrayList<>(productRepository.findAllByActiveTrueOrderByNameAsc());
+        if (currentProduct != null && !currentProduct.isActive()) {
+            products.add(currentProduct);
+        }
+        return products;
     }
 
     /** Consumes ingredient stock per the product's current recipe, and adds to the product's finished stock. */
