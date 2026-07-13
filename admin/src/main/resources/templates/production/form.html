@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(title='Новая партия')}"></head>
+<head th:replace="~{fragments/layout :: head(title=${batch.id} != null ? 'Изменить партию' : 'Новая партия')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: topbar(title='Новая партия')}"></div>
+<div th:replace="~{fragments/layout :: topbar(title=${batch.id} != null ? 'Изменить партию' : 'Новая партия')}"></div>
 
-<form th:action="@{/production}" th:object="${batch}" method="post" class="form-page">
+<form th:action="${batch.id} != null ? @{'/production/' + ${batch.id}} : @{/production}"
+      th:object="${batch}" method="post" class="form-page">
   <div th:if="${#fields.hasErrors('*')}" class="form-error-banner">
     <div th:each="err : ${#fields.errors('*')}" th:text="${err}"></div>
   </div>
@@ -24,7 +25,8 @@
     <label class="form-label">Товар</label>
     <select name="productId" class="form-select" required>
       <option value="">— выберите товар —</option>
-      <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name} + ' ' + ${p.sizeLabel}"></option>
+      <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name} + ' ' + ${p.sizeLabel}"
+              th:selected="${batch.product != null and batch.product.id == p.id}"></option>
     </select>
   </div>
   <div class="mb-3">
@@ -56,13 +58,19 @@
   </div>
 
   <div id="done-note" style="font-size:0.85rem; color:#868e96; margin-bottom:12px;">
-    Сохранение спишет сырьё по рецепту товара и пополнит остаток готовой продукции.
+    <span th:if="${batch.id} == null">Сохранение спишет сырьё по рецепту товара и пополнит остаток готовой продукции.</span>
+    <span th:if="${batch.id} != null">Сохранение пересчитает склад: старый эффект этой партии отменится, новый — применится (по текущему рецепту).</span>
   </div>
 
   <div class="sticky-save-bar">
     <a th:href="@{/production}" class="btn btn-outline-secondary">Отмена</a>
     <button type="submit" class="btn btn-dark">Сохранить</button>
   </div>
+</form>
+
+<form th:if="${batch.id} != null" th:action="@{'/production/' + ${batch.id} + '/delete'}" method="post" class="form-page pt-0">
+  <button type="submit" class="btn btn-outline-danger w-100"
+          onclick="return confirm('Удалить партию? Если она была отмечена «Уже сделано», склад скорректируется обратно.');">Удалить</button>
 </form>
 
 <script>
