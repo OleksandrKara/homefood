@@ -3,6 +3,7 @@ package com.homefood.admin.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -40,12 +41,15 @@ public class ProductionBatch {
     @Column(nullable = false)
     private BatchStatus status = BatchStatus.DONE;
 
+    @Size(max = 500, message = "Слишком длинный текст")
     @Column(name = "pickup_location")
     private String pickupLocation;
 
+    @Size(max = 255, message = "Слишком длинный текст")
     @Column(name = "pickup_window")
     private String pickupWindow;
 
+    @Size(max = 2000, message = "Слишком длинный текст")
     @Column(columnDefinition = "TEXT")
     private String notes;
 

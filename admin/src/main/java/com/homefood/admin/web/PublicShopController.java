@@ -9,8 +9,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +20,9 @@ import java.util.Map;
 /**
  * Public, unauthenticated storefront (see SecurityConfig permitAll for /shop/**).
  * Nginx maps the bare domain root to this page - see nginx/food.akluxnails.com.conf.
+ * Also see nginx rate limiting (homefood_shop_reserve zone) for the network-level side
+ * of abuse protection - this controller only handles what nginx can't see (per-phone limits,
+ * the honeypot field, field lengths).
  */
 @Controller
 @RequestMapping("/shop")
@@ -25,6 +30,10 @@ import java.util.Map;
 public class PublicShopController {
 
     private static final int MAX_RESERVATION_QUANTITY = 10;
+    private static final int MAX_RESERVATIONS_PER_PHONE_PER_HOUR = 3;
+    private static final int MAX_NAME_LENGTH = 255;
+    private static final int MAX_PHONE_LENGTH = 50;
+    private static final int MAX_NOTES_LENGTH = 2000;
 
     private final ProductRepository productRepository;
     private final ProductionBatchRepository productionBatchRepository;
@@ -59,8 +68,17 @@ public class PublicShopController {
                            @RequestParam Integer quantity,
                            @RequestParam(required = false) String notes,
                            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate preferredDate,
-                           @RequestParam(required = false) @DateTimeFormat(pattern = "HH:mm") LocalTime preferredTime) {
-        if (name == null || name.isBlank() || phone == null || phone.isBlank()
+                           @RequestParam(required = false) @DateTimeFormat(pattern = "HH:mm") LocalTime preferredTime,
+                           @RequestParam(required = false) String website) {
+        // Honeypot: a real visitor never sees or fills this field (hidden off-screen).
+        // Pretend success so an automated submitter has no signal it was caught.
+        if (website != null && !website.isBlank()) {
+            return "redirect:/shop?reserved=1";
+        }
+
+        if (name == null || name.isBlank() || name.length() > MAX_NAME_LENGTH
+                || phone == null || phone.isBlank() || phone.length() > MAX_PHONE_LENGTH
+                || (notes != null && notes.length() > MAX_NOTES_LENGTH)
                 || quantity == null || quantity < 1 || quantity > MAX_RESERVATION_QUANTITY) {
             return "redirect:/shop?error=1";
         }
@@ -69,9 +87,15 @@ public class PublicShopController {
             return "redirect:/shop?error=1";
         }
 
+        String trimmedPhone = phone.trim();
+        Instant hourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+        if (orderRepository.countByClientPhoneSince(trimmedPhone, hourAgo) >= MAX_RESERVATIONS_PER_PHONE_PER_HOUR) {
+            return "redirect:/shop?error=1";
+        }
+
         Client client = new Client();
         client.setName(name.trim());
-        client.setPhone(phone.trim());
+        client.setPhone(trimmedPhone);
         clientRepository.save(client);
 
         Order order = new Order();

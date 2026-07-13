@@ -2,6 +2,7 @@ package com.homefood.admin.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,13 +21,17 @@ public class Client {
     private Long id;
 
     @NotBlank(message = "Укажите имя")
+    @Size(max = 255, message = "Слишком длинное имя")
     @Column(nullable = false)
     private String name;
 
+    @Size(max = 50, message = "Слишком длинный телефон")
     private String phone;
 
+    @Size(max = 500, message = "Слишком длинный адрес")
     private String address;
 
+    @Size(max = 2000, message = "Слишком длинный текст")
     @Column(columnDefinition = "TEXT")
     private String notes;
 
