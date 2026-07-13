@@ -12,6 +12,10 @@
             th:text="${p.active} ? 'активен' : 'скрыт'"></span>
     </div>
     <div class="subtitle" th:text="'$' + ${#numbers.formatDecimal(p.basePrice, 1, 2)} + ' / банка'"></div>
+    <div class="meta">
+      <span th:text="'На складе: ' + ${p.stockQuantity} + ' шт'"></span>
+      <span th:if="${possibleBatches.get(p.id) != null}" th:text="'· можно сделать ещё ' + ${possibleBatches.get(p.id)}"></span>
+    </div>
   </a>
 
   <div th:if="${#lists.isEmpty(products)}" class="empty-state">

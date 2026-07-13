@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title=${recipe.id} != null ? 'Изменить рецепт' : 'Новый рецепт')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title=${recipe.id} != null ? 'Изменить рецепт' : 'Новый рецепт')}"></div>
+
+<form th:action="${recipe.id} != null ? @{'/recipes/' + ${recipe.id}} : @{/recipes}"
+      th:object="${recipe}" method="post" class="form-page">
+  <div class="mb-3">
+    <label class="form-label">Товар</label>
+    <select name="productId" class="form-select" required>
+      <option value="">— выберите товар —</option>
+      <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name} + ' ' + ${p.sizeLabel}"
+              th:selected="${recipe.product != null and recipe.product.id == p.id}"></option>
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Сырьё</label>
+    <select name="ingredientId" class="form-select" required>
+      <option value="">— выберите сырьё —</option>
+      <option th:each="i : ${ingredients}" th:value="${i.id}" th:text="${i.name} + ' (' + ${i.unit} + ')'"
+              th:selected="${recipe.ingredient != null and recipe.ingredient.id == i.id}"></option>
+    </select>
+    <a th:href="@{/ingredients/new}" target="_blank" class="d-inline-block mt-2" style="font-size:0.9rem;">+ Новое сырьё (в новой вкладке)</a>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Количество на 1 банку</label>
+    <input type="number" step="0.01" min="0" th:field="*{quantityPerUnit}" class="form-control" required/>
+  </div>
+
+  <div class="sticky-save-bar">
+    <a th:href="@{/recipes}" class="btn btn-outline-secondary">Отмена</a>
+    <button type="submit" class="btn btn-dark">Сохранить</button>
+  </div>
+</form>
+
+<form th:if="${recipe.id} != null" th:action="@{'/recipes/' + ${recipe.id} + '/delete'}" method="post" class="form-page pt-0">
+  <button type="submit" class="btn btn-outline-danger w-100"
+          onclick="return confirm('Удалить рецепт?');">Удалить</button>
+</form>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Рецепты')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title='Рецепты')}"></div>
+
+<div class="card-list">
+  <a th:each="r : ${recipes}" th:href="@{'/recipes/' + ${r.id} + '/edit'}" class="item-card">
+    <div class="title" th:text="${r.product.name} + ' ' + ${r.product.sizeLabel}"></div>
+    <div class="subtitle" th:text="${#numbers.formatDecimal(r.quantityPerUnit, 1, 2)} + ' ' + ${r.ingredient.unit} + ' ' + ${r.ingredient.name} + ' на 1 банку'"></div>
+  </a>
+
+  <div th:if="${#lists.isEmpty(recipes)}" class="empty-state">
+    <div class="icon">📋</div>
+    Рецептов пока нет.<br/>Укажите, сколько сырья уходит на 1 банку товара.
+  </div>
+</div>
+
+<a th:href="@{/recipes/new}" class="fab" aria-label="Новый рецепт">+</a>
+
+<div th:replace="~{fragments/layout :: bottomnav(active='')}"></div>
+</body>
+</html>

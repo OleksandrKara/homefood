@@ -8,11 +8,11 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "products")
+@Table(name = "ingredients")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Product {
+public class Ingredient {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,15 +21,9 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "size_label")
-    private String sizeLabel;
-
     @Column(nullable = false)
-    private boolean active = true;
-
-    @Column(name = "base_price", nullable = false)
-    private BigDecimal basePrice = BigDecimal.ZERO;
+    private String unit;
 
     @Column(name = "stock_quantity", nullable = false)
-    private Integer stockQuantity = 0;
+    private BigDecimal stockQuantity = BigDecimal.ZERO;
 }

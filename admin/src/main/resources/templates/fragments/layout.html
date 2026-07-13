@@ -19,6 +19,7 @@
     <div class="dropdown-menu">
       <a th:href="@{/districts}">📍 Районы</a>
       <a th:href="@{/payment-methods}">💳 Способы оплаты</a>
+      <a th:href="@{/recipes}">📋 Рецепты</a>
       <form th:action="@{/logout}" method="post">
         <button type="submit">⏻ Выйти</button>
       </form>
@@ -50,6 +51,9 @@
   </a>
   <a th:href="@{/products}" th:classappend="${active == 'products'} ? 'active'">
     <span class="icon">🥬</span>Товары
+  </a>
+  <a th:href="@{/expenses}" th:classappend="${active == 'expenses'} ? 'active'">
+    <span class="icon">💰</span>Расходы
   </a>
 </nav>
 

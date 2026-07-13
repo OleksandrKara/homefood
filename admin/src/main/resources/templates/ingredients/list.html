@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Склад')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title='Склад')}"></div>
+
+<div class="card-list">
+  <a th:each="i : ${ingredients}" th:href="@{'/ingredients/' + ${i.id} + '/edit'}" class="item-card">
+    <div class="row-top">
+      <span class="title" th:text="${i.name}"></span>
+      <span class="badge-status" th:classappend="${i.stockQuantity.signum() gt 0} ? 'badge-status-DONE' : 'badge-status-CANCELLED'"
+            th:text="${#numbers.formatDecimal(i.stockQuantity, 1, 2)} + ' ' + ${i.unit}"></span>
+    </div>
+  </a>
+
+  <div th:if="${#lists.isEmpty(ingredients)}" class="empty-state">
+    <div class="icon">📦</div>
+    Сырья пока нет.
+  </div>
+</div>
+
+<a th:href="@{/ingredients/new}" class="fab" aria-label="Новое сырьё">+</a>
+
+<div th:replace="~{fragments/layout :: bottomnav(active='expenses')}"></div>
+</body>
+</html>
