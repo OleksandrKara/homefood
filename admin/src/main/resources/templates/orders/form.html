@@ -83,10 +83,21 @@
 
   <div class="mb-3">
     <label class="form-label">Статус</label>
-    <select th:field="*{status}" class="form-select">
+    <select id="status-select" th:field="*{status}" class="form-select">
       <option th:each="s : ${statuses}" th:value="${s}"
               th:text="${s.name() == 'NEW' ? 'Новый' : (s.name() == 'DONE' ? 'Готово' : 'Отменён')}"></option>
     </select>
+  </div>
+
+  <div id="payment-method-field" class="mb-3">
+    <label class="form-label">Оплата</label>
+    <select th:field="*{paymentMethod}" class="form-select">
+      <option value="">— способ оплаты —</option>
+      <option th:each="pm : ${paymentMethods}" th:value="${pm.name}" th:text="${pm.name}"></option>
+      <option th:if="${order.paymentMethod != null and !order.paymentMethod.isEmpty() and !paymentMethods.![name].contains(order.paymentMethod)}"
+              th:value="${order.paymentMethod}" th:text="${order.paymentMethod}" selected></option>
+    </select>
+    <a th:href="@{/payment-methods/new}" target="_blank" class="d-inline-block mt-2" style="font-size:0.9rem;">+ Новый способ оплаты (в новой вкладке)</a>
   </div>
 
   <div class="mb-3">
@@ -110,6 +121,14 @@
     el.addEventListener('change', toggleDeliveryFields);
   });
   toggleDeliveryFields();
+
+  function togglePaymentMethodField() {
+    var statusSelect = document.getElementById('status-select');
+    var paymentField = document.getElementById('payment-method-field');
+    paymentField.style.display = (statusSelect.value === 'DONE') ? '' : 'none';
+  }
+  document.getElementById('status-select').addEventListener('change', togglePaymentMethodField);
+  togglePaymentMethodField();
 
   // Mirrors OrderPricing.calculateTotal server-side: jar 1 full price,
   // jars 2-3 discounted $1 each, jar 4+ back to full price.
