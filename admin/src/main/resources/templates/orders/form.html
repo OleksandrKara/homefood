@@ -48,17 +48,27 @@
   <div id="delivery-fields">
     <div class="mb-3">
       <label class="form-label">Район</label>
-      <input type="text" th:field="*{district}" class="form-control"/>
+      <select th:field="*{district}" class="form-select">
+        <option value="">— выберите район —</option>
+        <option th:each="d : ${districts}" th:value="${d.name}" th:text="${d.name}"></option>
+        <option th:if="${order.district != null and !order.district.isEmpty() and !districts.![name].contains(order.district)}"
+                th:value="${order.district}" th:text="${order.district}" selected></option>
+      </select>
+      <a th:href="@{/districts/new}" target="_blank" class="d-inline-block mt-2" style="font-size:0.9rem;">+ Новый район (в новой вкладке)</a>
     </div>
     <div class="mb-3">
       <label class="form-label">Адрес доставки</label>
-      <input type="text" th:field="*{deliveryAddress}" class="form-control"/>
+      <input type="text" th:field="*{deliveryAddress}" class="form-control" list="address-suggestions" autocomplete="off"/>
     </div>
     <div class="mb-3">
       <label class="form-label">Детали доставки</label>
       <textarea th:field="*{deliveryDetails}" class="form-control" placeholder="этаж, домофон, инструкции..."></textarea>
     </div>
   </div>
+
+  <datalist id="address-suggestions">
+    <option th:each="a : ${addressSuggestions}" th:value="${a}"></option>
+  </datalist>
 
   <div class="row mb-3">
     <div class="col-6">
@@ -77,6 +87,11 @@
       <option th:each="s : ${statuses}" th:value="${s}"
               th:text="${s.name() == 'NEW' ? 'Новый' : (s.name() == 'DONE' ? 'Готово' : 'Отменён')}"></option>
     </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Заметки</label>
+    <textarea th:field="*{notes}" class="form-control" placeholder="любая дополнительная информация..."></textarea>
   </div>
 
   <div class="sticky-save-bar">

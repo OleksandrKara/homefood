@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Районы')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title='Районы')}"></div>
+
+<div class="card-list">
+  <a th:each="d : ${districts}" th:href="@{'/districts/' + ${d.id} + '/edit'}" class="item-card">
+    <span class="title" th:text="${d.name}"></span>
+  </a>
+
+  <div th:if="${#lists.isEmpty(districts)}" class="empty-state">
+    <div class="icon">📍</div>
+    Районов пока нет.
+  </div>
+</div>
+
+<a th:href="@{/districts/new}" class="fab" aria-label="Новый район">+</a>
+
+<div th:replace="~{fragments/layout :: bottomnav(active='')}"></div>
+</body>
+</html>

@@ -13,9 +13,15 @@
 
 <div th:fragment="topbar(title)" class="top-bar">
   <h1 th:text="${title}">Заголовок</h1>
-  <form th:action="@{/logout}" method="post">
-    <button class="btn-logout" type="submit" aria-label="Выйти">⏻</button>
-  </form>
+  <details class="menu-wrap">
+    <summary class="btn-logout" aria-label="Меню">☰</summary>
+    <div class="dropdown-menu">
+      <a th:href="@{/districts}">📍 Районы</a>
+      <form th:action="@{/logout}" method="post">
+        <button type="submit">⏻ Выйти</button>
+      </form>
+    </div>
+  </details>
 </div>
 
 <nav th:fragment="bottomnav(active)" class="bottom-nav">

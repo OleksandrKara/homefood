@@ -4,23 +4,29 @@
 <body>
 <div th:replace="~{fragments/layout :: topbar(title='Заказы')}"></div>
 
-<div class="card-list">
-  <a th:each="o : ${orders}" th:href="@{'/orders/' + ${o.id} + '/edit'}" class="item-card">
-    <div class="row-top">
-      <span class="title" th:text="${o.deliveryDate != null ? #temporals.format(o.deliveryDate, 'dd.MM') : 'без даты'} + (${o.deliveryTime} != null ? ' · ' + ${#temporals.format(o.deliveryTime, 'HH:mm')} : '')"></span>
-      <span class="badge-status" th:classappend="'badge-status-' + ${o.status}" th:text="${o.status.name() == 'NEW' ? 'Новый' : (o.status.name() == 'DONE' ? 'Готово' : 'Отменён')}"></span>
+<div th:each="dateEntry : ${groupedOrders}">
+  <h2 class="group-header" th:text="${dateEntry.key}"></h2>
+  <div th:each="subEntry : ${dateEntry.value}">
+    <h3 class="subgroup-header" th:text="${subEntry.key}"></h3>
+    <div class="card-list">
+      <th:block th:each="o : ${subEntry.value}">
+        <div th:replace="~{fragments/order-card :: card(o=${o})}"></div>
+      </th:block>
     </div>
-    <div class="subtitle" th:text="${o.client.name}"></div>
-    <div class="subtitle" th:text="${o.product.name} + ' ' + ${o.product.sizeLabel} + ' · ' + ${o.quantity} + ' шт' + (${o.totalPrice} != null ? ' · $' + ${#numbers.formatDecimal(o.totalPrice, 1, 2)} : '')"></div>
-    <div class="meta">
-      <span th:text="${o.deliveryType.name() == 'PICKUP'} ? '🏠 Самовывоз' : '🚚 Доставка'"></span>
-      <span th:if="${o.deliveryType.name() == 'DELIVERY' and o.district != null and !o.district.isEmpty()}" th:text="${o.district}"></span>
-    </div>
-  </a>
+  </div>
+</div>
 
-  <div th:if="${#lists.isEmpty(orders)}" class="empty-state">
-    <div class="icon">📦</div>
-    Заказов пока нет.<br/>Нажмите «+», чтобы добавить первый.
+<div th:if="${#maps.isEmpty(groupedOrders) and #lists.isEmpty(doneOrders)}" class="empty-state">
+  <div class="icon">📦</div>
+  Заказов пока нет.<br/>Нажмите «+», чтобы добавить первый.
+</div>
+
+<div th:if="${!#lists.isEmpty(doneOrders)}">
+  <h2 class="group-header">✅ Готово</h2>
+  <div class="card-list">
+    <th:block th:each="o : ${doneOrders}">
+      <div th:replace="~{fragments/order-card :: card(o=${o})}"></div>
+    </th:block>
   </div>
 </div>
 

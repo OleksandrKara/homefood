@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title=${district.id} != null ? 'Изменить район' : 'Новый район')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title=${district.id} != null ? 'Изменить район' : 'Новый район')}"></div>
+
+<form th:action="${district.id} != null ? @{'/districts/' + ${district.id}} : @{/districts}"
+      th:object="${district}" method="post" class="form-page">
+  <div class="mb-3">
+    <label class="form-label">Название района</label>
+    <input type="text" th:field="*{name}" class="form-control" required autofocus/>
+  </div>
+
+  <div class="sticky-save-bar">
+    <a th:href="@{/districts}" class="btn btn-outline-secondary">Отмена</a>
+    <button type="submit" class="btn btn-dark">Сохранить</button>
+  </div>
+</form>
+
+<form th:if="${district.id} != null" th:action="@{'/districts/' + ${district.id} + '/delete'}" method="post" class="form-page pt-0">
+  <button type="submit" class="btn btn-outline-danger w-100"
+          onclick="return confirm('Удалить район? Уже сохранённые заказы это не затронет.');">Удалить район</button>
+</form>
+</body>
+</html>
