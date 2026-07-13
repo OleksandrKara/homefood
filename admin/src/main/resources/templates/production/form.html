@@ -6,6 +6,18 @@
 
 <form th:action="@{/production}" th:object="${batch}" method="post" class="form-page">
   <div class="mb-3">
+    <label class="form-label">Статус</label>
+    <div class="segmented">
+      <input type="radio" id="st-planned" name="status" value="PLANNED"
+             th:checked="${batch.status.name() == 'PLANNED'}" class="batch-status-radio"/>
+      <label for="st-planned">🗓 Планируется</label>
+      <input type="radio" id="st-done" name="status" value="DONE"
+             th:checked="${batch.status.name() == 'DONE'}" class="batch-status-radio"/>
+      <label for="st-done">✅ Уже сделано</label>
+    </div>
+  </div>
+
+  <div class="mb-3">
     <label class="form-label">Товар</label>
     <select name="productId" class="form-select" required>
       <option value="">— выберите товар —</option>
@@ -13,19 +25,34 @@
     </select>
   </div>
   <div class="mb-3">
-    <label class="form-label">Сколько банок сделали</label>
+    <label class="form-label">Сколько банок</label>
     <input type="number" min="1" th:field="*{quantityProduced}" class="form-control" required/>
   </div>
   <div class="mb-3">
     <label class="form-label">Дата</label>
     <input type="date" th:field="*{batchDate}" class="form-control" required/>
   </div>
+
+  <div id="pickup-fields">
+    <div class="mb-3">
+      <label class="form-label">Место самовывоза</label>
+      <input type="text" th:field="*{pickupLocation}" class="form-control" placeholder="напр. San Diego, Downtown"/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Время самовывоза</label>
+      <input type="text" th:field="*{pickupWindow}" class="form-control" placeholder="напр. среда 14:00-18:00"/>
+    </div>
+    <div style="font-size:0.85rem; color:#868e96; margin-bottom:12px;">
+      Место и время показываются клиентам на публичной странице для запланированных партий.
+    </div>
+  </div>
+
   <div class="mb-3">
     <label class="form-label">Заметки</label>
     <textarea th:field="*{notes}" class="form-control" placeholder="необязательно"></textarea>
   </div>
 
-  <div style="font-size:0.85rem; color:#868e96; margin-bottom:12px;">
+  <div id="done-note" style="font-size:0.85rem; color:#868e96; margin-bottom:12px;">
     Сохранение спишет сырьё по рецепту товара и пополнит остаток готовой продукции.
   </div>
 
@@ -34,5 +61,17 @@
     <button type="submit" class="btn btn-dark">Сохранить</button>
   </div>
 </form>
+
+<script>
+  function toggleBatchStatusFields() {
+    var checked = document.querySelector('input[name="status"]:checked');
+    var isDone = checked && checked.value === 'DONE';
+    document.getElementById('done-note').style.display = isDone ? '' : 'none';
+  }
+  document.querySelectorAll('.batch-status-radio').forEach(function (el) {
+    el.addEventListener('change', toggleBatchStatusFields);
+  });
+  toggleBatchStatusFields();
+</script>
 </body>
 </html>

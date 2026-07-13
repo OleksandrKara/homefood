@@ -31,6 +31,16 @@ public class ProductionBatch {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate batchDate = LocalDate.now();
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BatchStatus status = BatchStatus.DONE;
+
+    @Column(name = "pickup_location")
+    private String pickupLocation;
+
+    @Column(name = "pickup_window")
+    private String pickupWindow;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 

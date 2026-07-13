@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+  <title>Домашняя еда — заказ и самовывоз</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body class="shop-body">
+
+<div class="shop-hero">
+  <div class="shop-hero-emoji">🥬</div>
+  <h1>Домашняя еда</h1>
+  <p>Свежее, натуральное, готово к самовывозу</p>
+</div>
+
+<div class="shop-wrap">
+
+  <div th:if="${reserved}" class="shop-alert shop-alert-success">
+    ✅ Заявка отправлена! Мы свяжемся с вами по телефону, чтобы подтвердить заказ.
+  </div>
+  <div th:if="${error}" class="shop-alert shop-alert-error">
+    ⚠️ Проверьте имя, телефон и количество (от 1 до <span th:text="${maxQuantity}"></span> банок) и попробуйте ещё раз.
+  </div>
+
+  <div th:each="p : ${products}" class="shop-product-card">
+    <div class="shop-product-top">
+      <div class="shop-product-name" th:text="${p.name} + ' ' + ${p.sizeLabel}"></div>
+      <div class="shop-product-price" th:text="'$' + ${#numbers.formatDecimal(p.basePrice, 1, 2)}"></div>
+    </div>
+    <span class="shop-stock-badge" th:classappend="${p.stockQuantity > 0} ? 'shop-stock-in' : 'shop-stock-out'"
+          th:text="${p.stockQuantity > 0} ? ('В наличии: ' + ${p.stockQuantity} + ' шт') : 'Сейчас нет в наличии'"></span>
+
+    <div class="shop-next-batch" th:if="${nextBatchByProduct.get(p.id) != null}"
+         th:with="batch=${nextBatchByProduct.get(p.id)}">
+      <span th:text="'🗓 Следующая партия: ' + ${#temporals.format(batch.batchDate, 'dd.MM.yyyy')}"></span>
+      <span th:if="${batch.pickupLocation != null and !batch.pickupLocation.isEmpty()}" th:text="'📍 ' + ${batch.pickupLocation}"></span>
+      <span th:if="${batch.pickupWindow != null and !batch.pickupWindow.isEmpty()}" th:text="'🕒 ' + ${batch.pickupWindow}"></span>
+    </div>
+  </div>
+
+  <div th:if="${#lists.isEmpty(products)}" class="shop-product-card">
+    Пока нет доступных товаров — загляните позже.
+  </div>
+
+  <div class="shop-reserve" th:if="${!#lists.isEmpty(products)}">
+    <h2>Забронировать</h2>
+    <p class="hint">Мы свяжемся с вами, чтобы подтвердить заказ и самовывоз.</p>
+
+    <form th:action="@{/shop/reserve}" method="post">
+      <div class="mb-3">
+        <label class="form-label">Ваше имя</label>
+        <input type="text" name="name" class="form-control" required autofocus/>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Телефон</label>
+        <input type="tel" name="phone" class="form-control" placeholder="+1 555 123 4567" required/>
+      </div>
+      <div class="mb-3" th:if="${products.size() > 1}">
+        <label class="form-label">Товар</label>
+        <select name="productId" class="form-select" required>
+          <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name} + ' ' + ${p.sizeLabel}"></option>
+        </select>
+      </div>
+      <input th:if="${products.size() == 1}" type="hidden" name="productId" th:value="${products[0].id}"/>
+
+      <div class="mb-3">
+        <label class="form-label">Количество банок</label>
+        <div class="qty-stepper">
+          <button type="button" id="qty-minus" aria-label="Меньше">−</button>
+          <input type="number" name="quantity" id="qty-input" value="1" min="1" th:max="${maxQuantity}" readonly/>
+          <button type="button" id="qty-plus" aria-label="Больше">+</button>
+        </div>
+        <div class="qty-cap" th:text="'до ' + ${maxQuantity} + ' банок за раз'"></div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Комментарий</label>
+        <textarea name="notes" class="form-control" placeholder="необязательно"></textarea>
+      </div>
+
+      <button type="submit" class="shop-submit">Забронировать</button>
+    </form>
+  </div>
+
+  <div class="shop-footer">🥬 homefood</div>
+</div>
+
+<script th:inline="javascript">
+  var maxQty = /*[[${maxQuantity}]]*/ 10;
+  var qtyInput = document.getElementById('qty-input');
+  document.getElementById('qty-minus').addEventListener('click', function () {
+    qtyInput.value = Math.max(1, parseInt(qtyInput.value, 10) - 1);
+  });
+  document.getElementById('qty-plus').addEventListener('click', function () {
+    qtyInput.value = Math.min(maxQty, parseInt(qtyInput.value, 10) + 1);
+  });
+</script>
+</body>
+</html>

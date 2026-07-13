@@ -4,7 +4,8 @@
 <a th:fragment="card(o)" th:href="@{'/orders/' + ${o.id} + '/edit'}" class="item-card">
   <div class="row-top">
     <span class="title" th:text="${o.deliveryDate != null ? #temporals.format(o.deliveryDate, 'dd.MM') : 'без даты'} + (${o.deliveryTime} != null ? ' · ' + ${#temporals.format(o.deliveryTime, 'HH:mm')} : '')"></span>
-    <span class="badge-status" th:classappend="'badge-status-' + ${o.status}" th:text="${o.status.name() == 'NEW' ? 'Новый' : (o.status.name() == 'DONE' ? 'Готово' : 'Отменён')}"></span>
+    <span class="badge-status" th:classappend="'badge-status-' + ${o.status}"
+          th:text="${o.status.name() == 'REQUESTED' ? '🔔 Заявка' : (o.status.name() == 'NEW' ? 'Новый' : (o.status.name() == 'DONE' ? 'Готово' : 'Отменён'))}"></span>
   </div>
   <div class="subtitle" th:text="${o.client.name}"></div>
   <div class="subtitle" th:text="${o.product.name} + ' ' + ${o.product.sizeLabel} + ' · ' + ${o.quantity} + ' шт' + (${o.totalPrice} != null ? ' · $' + ${#numbers.formatDecimal(o.totalPrice, 1, 2)} : '')"></div>

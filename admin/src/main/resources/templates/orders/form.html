@@ -85,7 +85,7 @@
     <label class="form-label">Статус</label>
     <select id="status-select" th:field="*{status}" class="form-select">
       <option th:each="s : ${statuses}" th:value="${s}"
-              th:text="${s.name() == 'NEW' ? 'Новый' : (s.name() == 'DONE' ? 'Готово' : 'Отменён')}"></option>
+              th:text="${s.name() == 'REQUESTED' ? 'Заявка (не подтверждён)' : (s.name() == 'NEW' ? 'Новый' : (s.name() == 'DONE' ? 'Готово' : 'Отменён'))}"></option>
     </select>
   </div>
 
