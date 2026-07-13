@@ -40,11 +40,9 @@ body {
   cursor: pointer;
   list-style: none;
 }
-.btn-logout::-webkit-details-marker { display: none; }
-
 .menu-wrap { position: relative; }
-.menu-wrap[open] .btn-logout { background: #e9ecef; }
 .dropdown-menu {
+  display: none;
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
@@ -55,6 +53,7 @@ body {
   overflow: hidden;
   z-index: 1040;
 }
+.dropdown-menu.show { display: block; }
 .dropdown-menu a, .dropdown-menu button {
   display: block;
   width: 100%;
