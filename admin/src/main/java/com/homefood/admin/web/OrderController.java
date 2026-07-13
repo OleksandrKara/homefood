@@ -85,7 +85,7 @@ public class OrderController {
     public String newForm(Model model) {
         Order order = new Order();
         order.setQuantity(1);
-        addFormAttributes(model);
+        addFormAttributes(model, null);
         model.addAttribute("order", order);
         return "orders/form";
     }
@@ -94,7 +94,7 @@ public class OrderController {
     public String create(@Valid @ModelAttribute("order") Order order, BindingResult result,
                           @RequestParam Long clientId, @RequestParam Long productId, Model model) {
         if (result.hasErrors()) {
-            addFormAttributes(model);
+            addFormAttributes(model, null);
             return "orders/form";
         }
         Product product = productRef(productId);
@@ -109,7 +109,7 @@ public class OrderController {
     public String editForm(@PathVariable Long id, Model model) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
-        addFormAttributes(model);
+        addFormAttributes(model, order.getProduct());
         model.addAttribute("order", order);
         return "orders/form";
     }
@@ -117,12 +117,12 @@ public class OrderController {
     @PostMapping("/{id}")
     public String update(@PathVariable Long id, @Valid @ModelAttribute("order") Order order, BindingResult result,
                           @RequestParam Long clientId, @RequestParam Long productId, Model model) {
-        if (result.hasErrors()) {
-            addFormAttributes(model);
-            return "orders/form";
-        }
         Order existing = orderRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
+        if (result.hasErrors()) {
+            addFormAttributes(model, existing.getProduct());
+            return "orders/form";
+        }
         Product product = productRef(productId);
         order.setId(id);
         order.setCreatedAt(existing.getCreatedAt());
@@ -143,9 +143,22 @@ public class OrderController {
                 .orElseThrow(() -> new IllegalArgumentException("Product not found: " + id));
     }
 
-    private void addFormAttributes(Model model) {
+    /** Active products, plus the currently-assigned one even if it's been deactivated since. */
+    private List<Product> selectableProducts(Product currentProduct) {
+        List<Product> products = new java.util.ArrayList<>(productRepository.findAllByActiveTrueOrderByNameAsc());
+        if (currentProduct != null && !currentProduct.isActive()) {
+            products.add(currentProduct);
+        }
+        return products;
+    }
+
+    /**
+     * @param currentProduct the order's currently-assigned product, if editing - included even
+     *                       when inactive so the dropdown still shows/keeps it selected.
+     */
+    private void addFormAttributes(Model model, Product currentProduct) {
         model.addAttribute("clients", clientRepository.findAllByOrderByNameAsc());
-        model.addAttribute("products", productRepository.findAllByOrderByNameAsc());
+        model.addAttribute("products", selectableProducts(currentProduct));
         model.addAttribute("deliveryTypes", DeliveryType.values());
         model.addAttribute("statuses", OrderStatus.values());
         model.addAttribute("districts", districtRepository.findAllByOrderByNameAsc());

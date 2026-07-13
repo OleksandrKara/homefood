@@ -39,7 +39,7 @@ public class ProductionController {
         ProductionBatch batch = new ProductionBatch();
         batch.setQuantityProduced(1);
         model.addAttribute("batch", batch);
-        model.addAttribute("products", productRepository.findAllByOrderByNameAsc());
+        model.addAttribute("products", productRepository.findAllByActiveTrueOrderByNameAsc());
         return "production/form";
     }
 
@@ -47,7 +47,7 @@ public class ProductionController {
     public String create(@Valid @ModelAttribute("batch") ProductionBatch batch, BindingResult result,
                           @RequestParam Long productId, Model model) {
         if (result.hasErrors()) {
-            model.addAttribute("products", productRepository.findAllByOrderByNameAsc());
+            model.addAttribute("products", productRepository.findAllByActiveTrueOrderByNameAsc());
             return "production/form";
         }
         Product product = productRepository.findById(productId)
