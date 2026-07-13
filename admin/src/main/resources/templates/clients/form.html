@@ -6,6 +6,9 @@
 
 <form th:action="${client.id} != null ? @{'/clients/' + ${client.id}} : @{/clients}"
       th:object="${client}" method="post" class="form-page">
+  <div th:if="${#fields.hasErrors('*')}" class="form-error-banner">
+    <div th:each="err : ${#fields.errors('*')}" th:text="${err}"></div>
+  </div>
   <div class="mb-3">
     <label class="form-label">Имя</label>
     <input type="text" th:field="*{name}" class="form-control" required autofocus/>

@@ -3,7 +3,7 @@
 }
 
 body {
-  padding-bottom: calc(70px + var(--safe-bottom));
+  padding-bottom: calc(86px + var(--safe-bottom));
   background: #f4f5f7;
   -webkit-tap-highlight-color: transparent;
 }
@@ -80,21 +80,24 @@ body {
 .bottom-nav a {
   flex: 1;
   text-align: center;
-  padding: 8px 4px calc(6px + var(--safe-bottom) * 0);
-  color: #868e96;
+  padding: 12px 4px 10px;
+  color: #495057;
   text-decoration: none;
-  font-size: 0.72rem;
+  font-size: 0.86rem;
+  font-weight: 600;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  min-height: 64px;
+  justify-content: center;
 }
 .bottom-nav a.active {
   color: #212529;
-  font-weight: 600;
+  font-weight: 700;
 }
 .bottom-nav .icon {
-  font-size: 1.35rem;
+  font-size: 1.7rem;
   line-height: 1;
 }
 
@@ -102,7 +105,7 @@ body {
 .fab {
   position: fixed;
   right: 16px;
-  bottom: calc(78px + var(--safe-bottom));
+  bottom: calc(94px + var(--safe-bottom));
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -462,3 +465,15 @@ body.shop-body {
   border-radius: 20px;
 }
 .nav-link-card .chevron { color: #adb5bd; font-size: 1.1rem; }
+
+/* Form validation error banner */
+.form-error-banner {
+  background: #fde2e1;
+  color: #7f1d1d;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.form-error-banner div { padding: 2px 0; }

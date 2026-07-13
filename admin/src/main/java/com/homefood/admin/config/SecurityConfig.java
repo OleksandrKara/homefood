@@ -11,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 
 /**
  * Single shared admin login for V1 — one account, credentials from env
@@ -20,7 +21,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http, SlidingSessionCookieFilter slidingSessionCookieFilter) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/actuator/health", "/css/**", "/shop", "/shop/**").permitAll()
@@ -32,7 +33,10 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
-                        .permitAll());
+                        .permitAll())
+                // Refreshes the session cookie's Max-Age on every authenticated request so a
+                // returning visit within 24h extends the login by another 24h (see class javadoc).
+                .addFilterAfter(slidingSessionCookieFilter, SecurityContextHolderFilter.class);
         return http.build();
     }
 

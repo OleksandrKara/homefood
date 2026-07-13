@@ -1,6 +1,9 @@
 package com.homefood.admin.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,12 +28,16 @@ public class Expense {
     @Column(nullable = false)
     private ExpenseCategory category = ExpenseCategory.OPERATIONAL;
 
+    @NotBlank(message = "Укажите описание")
     @Column(nullable = false)
     private String description;
 
+    @NotNull(message = "Укажите сумму")
+    @PositiveOrZero(message = "Сумма не может быть отрицательной")
     @Column(nullable = false)
     private BigDecimal amount;
 
+    @NotNull(message = "Укажите дату")
     @Column(name = "expense_date", nullable = false)
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate expenseDate = LocalDate.now();

@@ -1,6 +1,8 @@
 package com.homefood.admin.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -24,9 +26,12 @@ public class ProductionBatch {
     @JoinColumn(name = "product_id")
     private Product product;
 
+    @NotNull(message = "Укажите количество")
+    @Positive(message = "Количество должно быть больше нуля")
     @Column(name = "quantity_produced", nullable = false)
     private Integer quantityProduced;
 
+    @NotNull(message = "Укажите дату")
     @Column(name = "batch_date", nullable = false)
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate batchDate = LocalDate.now();

@@ -1,6 +1,8 @@
 package com.homefood.admin.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,6 +32,8 @@ public class Order {
     @JoinColumn(name = "product_id")
     private Product product;
 
+    @NotNull(message = "Укажите количество")
+    @Min(value = 1, message = "Количество должно быть не меньше 1")
     @Column(nullable = false)
     private Integer quantity;
 

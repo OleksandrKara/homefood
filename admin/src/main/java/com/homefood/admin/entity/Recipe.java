@@ -1,6 +1,8 @@
 package com.homefood.admin.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,6 +28,8 @@ public class Recipe {
     @JoinColumn(name = "ingredient_id")
     private Ingredient ingredient;
 
+    @NotNull(message = "Укажите количество")
+    @Positive(message = "Количество должно быть больше нуля")
     @Column(name = "quantity_per_unit", nullable = false)
     private BigDecimal quantityPerUnit;
 }

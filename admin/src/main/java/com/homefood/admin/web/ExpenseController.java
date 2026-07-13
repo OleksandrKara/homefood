@@ -39,6 +39,9 @@ public class ExpenseController {
     @PostMapping
     public String create(@Valid @ModelAttribute("expense") Expense expense, BindingResult result,
                           @RequestParam(required = false) Long ingredientId, Model model) {
+        if (ingredientId != null && expense.getQuantity() == null) {
+            result.rejectValue("quantity", "required", "Укажите купленное количество, раз выбрали сырьё");
+        }
         if (result.hasErrors()) {
             addFormAttributes(model);
             return "expenses/form";
@@ -61,6 +64,9 @@ public class ExpenseController {
     @PostMapping("/{id}")
     public String update(@PathVariable Long id, @Valid @ModelAttribute("expense") Expense expense, BindingResult result,
                           @RequestParam(required = false) Long ingredientId, Model model) {
+        if (ingredientId != null && expense.getQuantity() == null) {
+            result.rejectValue("quantity", "required", "Укажите купленное количество, раз выбрали сырьё");
+        }
         if (result.hasErrors()) {
             addFormAttributes(model);
             return "expenses/form";
