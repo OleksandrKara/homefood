@@ -16,12 +16,16 @@
   </div>
   <div class="mb-3">
     <label class="form-label">Адрес</label>
-    <input type="text" th:field="*{address}" class="form-control"/>
+    <input type="text" th:field="*{address}" class="form-control" list="address-suggestions" autocomplete="off"/>
   </div>
   <div class="mb-3">
     <label class="form-label">Заметки</label>
     <textarea th:field="*{notes}" class="form-control"></textarea>
   </div>
+
+  <datalist id="address-suggestions">
+    <option th:each="a : ${addressSuggestions}" th:value="${a}"></option>
+  </datalist>
 
   <div class="sticky-save-bar">
     <a th:href="@{/clients}" class="btn btn-outline-secondary">Отмена</a>

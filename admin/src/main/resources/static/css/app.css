@@ -34,7 +34,39 @@ body {
   border-radius: 50%;
   font-size: 1.1rem;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  list-style: none;
 }
+.btn-logout::-webkit-details-marker { display: none; }
+
+.menu-wrap { position: relative; }
+.menu-wrap[open] .btn-logout { background: #e9ecef; }
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.18);
+  min-width: 180px;
+  overflow: hidden;
+  z-index: 1040;
+}
+.dropdown-menu a, .dropdown-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  border: none;
+  background: none;
+  color: #212529;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.dropdown-menu a:active, .dropdown-menu button:active { background: #f1f3f5; }
 
 /* Bottom tab bar */
 .bottom-nav {
@@ -87,8 +119,29 @@ body {
 }
 .fab:hover, .fab:active { color: #fff; background: #000; }
 
+/* Group headers (order list: grouped by date, then district/pickup) */
+.group-header {
+  max-width: 720px;
+  margin: 18px auto 0;
+  padding: 0 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #212529;
+}
+.group-header:first-of-type { margin-top: 12px; }
+.subgroup-header {
+  max-width: 720px;
+  margin: 10px auto 0;
+  padding: 0 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #868e96;
+}
+
 /* Card list */
-.card-list { padding: 12px; display: flex; flex-direction: column; gap: 10px; max-width: 720px; margin: 0 auto; }
+.card-list { padding: 8px 12px 4px; display: flex; flex-direction: column; gap: 10px; max-width: 720px; margin: 0 auto; }
 .item-card {
   background: #fff;
   border-radius: 14px;

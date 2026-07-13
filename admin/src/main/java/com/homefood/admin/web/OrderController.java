@@ -7,6 +7,7 @@ import com.homefood.admin.entity.OrderStatus;
 import com.homefood.admin.entity.Product;
 import com.homefood.admin.pricing.OrderPricing;
 import com.homefood.admin.repository.ClientRepository;
+import com.homefood.admin.repository.DistrictRepository;
 import com.homefood.admin.repository.OrderRepository;
 import com.homefood.admin.repository.ProductRepository;
 import jakarta.validation.Valid;
@@ -16,18 +17,54 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 @Controller
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 public class OrderController {
 
+    private static final String[] MONTHS_RU = {
+            "", "января", "февраля", "марта", "апреля", "мая", "июня",
+            "июля", "августа", "сентября", "октября", "ноября", "декабря"
+    };
+    private static final String[] DOW_RU = {
+            "", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"
+    };
+
     private final OrderRepository orderRepository;
     private final ClientRepository clientRepository;
     private final ProductRepository productRepository;
+    private final DistrictRepository districtRepository;
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("orders", orderRepository.findAllByOrderByDeliveryDateAscDeliveryTimeAsc());
+        List<Order> all = orderRepository.findAllByOrderByDeliveryDateAscDeliveryTimeAsc();
+
+        Map<String, Map<String, List<Order>>> grouped = new LinkedHashMap<>();
+        List<Order> done = new java.util.ArrayList<>();
+
+        for (Order o : all) {
+            if (o.getStatus() == OrderStatus.DONE) {
+                done.add(o);
+                continue;
+            }
+            String dateLabel = formatDateLabel(o.getDeliveryDate());
+            String subLabel = o.getDeliveryType() == DeliveryType.PICKUP
+                    ? "🏠 Самовывоз"
+                    : (o.getDistrict() != null && !o.getDistrict().isBlank() ? o.getDistrict() : "Без района");
+            grouped.computeIfAbsent(dateLabel, k -> new LinkedHashMap<>())
+                    .computeIfAbsent(subLabel, k -> new java.util.ArrayList<>())
+                    .add(o);
+        }
+
+        model.addAttribute("groupedOrders", grouped);
+        model.addAttribute("doneOrders", done);
         return "orders/list";
     }
 
@@ -98,5 +135,24 @@ public class OrderController {
         model.addAttribute("products", productRepository.findAllByOrderByNameAsc());
         model.addAttribute("deliveryTypes", DeliveryType.values());
         model.addAttribute("statuses", OrderStatus.values());
+        model.addAttribute("districts", districtRepository.findAllByOrderByNameAsc());
+
+        Set<String> addresses = new LinkedHashSet<>(clientRepository.findDistinctAddresses());
+        addresses.addAll(orderRepository.findDistinctDeliveryAddresses());
+        model.addAttribute("addressSuggestions", addresses);
+    }
+
+    private String formatDateLabel(LocalDate date) {
+        if (date == null) {
+            return "Без даты";
+        }
+        LocalDate today = LocalDate.now();
+        if (date.equals(today)) {
+            return "Сегодня";
+        }
+        if (date.equals(today.plusDays(1))) {
+            return "Завтра";
+        }
+        return date.getDayOfMonth() + " " + MONTHS_RU[date.getMonthValue()] + ", " + DOW_RU[date.getDayOfWeek().getValue()];
     }
 }
