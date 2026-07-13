@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title=${paymentMethod.id} != null ? 'Изменить способ оплаты' : 'Новый способ оплаты')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title=${paymentMethod.id} != null ? 'Изменить способ оплаты' : 'Новый способ оплаты')}"></div>
+
+<form th:action="${paymentMethod.id} != null ? @{'/payment-methods/' + ${paymentMethod.id}} : @{/payment-methods}"
+      th:object="${paymentMethod}" method="post" class="form-page">
+  <div class="mb-3">
+    <label class="form-label">Название</label>
+    <input type="text" th:field="*{name}" class="form-control" required autofocus/>
+  </div>
+
+  <div class="sticky-save-bar">
+    <a th:href="@{/payment-methods}" class="btn btn-outline-secondary">Отмена</a>
+    <button type="submit" class="btn btn-dark">Сохранить</button>
+  </div>
+</form>
+
+<form th:if="${paymentMethod.id} != null" th:action="@{'/payment-methods/' + ${paymentMethod.id} + '/delete'}" method="post" class="form-page pt-0">
+  <button type="submit" class="btn btn-outline-danger w-100"
+          onclick="return confirm('Удалить способ оплаты? Уже сохранённые заказы это не затронет.');">Удалить</button>
+</form>
+</body>
+</html>

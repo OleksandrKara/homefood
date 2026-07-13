@@ -9,6 +9,7 @@ import com.homefood.admin.pricing.OrderPricing;
 import com.homefood.admin.repository.ClientRepository;
 import com.homefood.admin.repository.DistrictRepository;
 import com.homefood.admin.repository.OrderRepository;
+import com.homefood.admin.repository.PaymentMethodRepository;
 import com.homefood.admin.repository.ProductRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,7 @@ public class OrderController {
     private final ClientRepository clientRepository;
     private final ProductRepository productRepository;
     private final DistrictRepository districtRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
 
     @GetMapping
     public String list(Model model) {
@@ -141,6 +143,7 @@ public class OrderController {
         model.addAttribute("deliveryTypes", DeliveryType.values());
         model.addAttribute("statuses", OrderStatus.values());
         model.addAttribute("districts", districtRepository.findAllByOrderByNameAsc());
+        model.addAttribute("paymentMethods", paymentMethodRepository.findAllByOrderByNameAsc());
 
         Set<String> addresses = new LinkedHashSet<>(clientRepository.findDistinctAddresses());
         addresses.addAll(orderRepository.findDistinctDeliveryAddresses());

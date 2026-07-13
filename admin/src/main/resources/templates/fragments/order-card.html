@@ -11,6 +11,7 @@
   <div class="meta">
     <span th:text="${o.deliveryType.name() == 'PICKUP'} ? '🏠 Самовывоз' : '🚚 Доставка'"></span>
     <span th:if="${o.deliveryType.name() == 'DELIVERY' and o.district != null and !o.district.isEmpty()}" th:text="${o.district}"></span>
+    <span th:if="${o.paymentMethod != null and !o.paymentMethod.isEmpty()}" th:text="'💳 ' + ${o.paymentMethod}"></span>
   </div>
   <div class="meta" th:if="${o.notes != null and !o.notes.isEmpty()}">
     <span>📝 <span th:text="${o.notes}"></span></span>

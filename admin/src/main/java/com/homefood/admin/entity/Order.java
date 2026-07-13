@@ -60,6 +60,9 @@ public class Order {
     @Column(name = "total_price")
     private BigDecimal totalPrice;
 
+    @Column(name = "payment_method")
+    private String paymentMethod;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 
