@@ -35,7 +35,9 @@ server:
   servlet:
     context-path: /admin
     session:
-      timeout: 12h
+      timeout: 24h
+      cookie:
+        max-age: 24h
 
 management:
   endpoints:
