@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Рецепт')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title='Рецепт')}"></div>
+
+<form th:action="@{'/recipes/product/' + ${product.id}}" method="post" class="form-page">
+  <div th:if="${error}" class="form-error-banner" th:text="${error}"></div>
+
+  <div class="mb-3">
+    <div class="form-label" style="font-size:1.05rem;" th:text="${product.name} + ' ' + ${product.sizeLabel}"></div>
+    <div style="font-size:0.85rem; color:#868e96;">Сколько каждого сырья уходит на 1 банку</div>
+  </div>
+
+  <div id="recipe-rows">
+    <div class="recipe-row" th:each="r : ${rows}" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+      <select name="ingredientId" class="form-select" style="flex:2;">
+        <option value="">— сырьё —</option>
+        <option th:each="i : ${ingredients}" th:value="${i.id}" th:text="${i.name} + ' (' + ${i.unit} + ')'"
+                th:selected="${r.ingredient.id == i.id}"></option>
+      </select>
+      <input type="number" name="quantityPerUnit" step="0.01" min="0.01" th:value="${r.quantityPerUnit}"
+             class="form-control" placeholder="кол-во" style="flex:1;"/>
+      <button type="button" class="btn btn-outline-secondary remove-row" aria-label="Удалить строку" style="min-height:48px;">✕</button>
+    </div>
+
+    <div class="recipe-row" th:if="${#lists.isEmpty(rows)}" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+      <select name="ingredientId" class="form-select" style="flex:2;">
+        <option value="">— сырьё —</option>
+        <option th:each="i : ${ingredients}" th:value="${i.id}" th:text="${i.name} + ' (' + ${i.unit} + ')'"></option>
+      </select>
+      <input type="number" name="quantityPerUnit" step="0.01" min="0.01" class="form-control" placeholder="кол-во" style="flex:1;"/>
+      <button type="button" class="btn btn-outline-secondary remove-row" aria-label="Удалить строку" style="min-height:48px;">✕</button>
+    </div>
+  </div>
+
+  <button type="button" id="add-row" class="btn btn-outline-dark w-100 mb-3">+ Добавить ингредиент</button>
+
+  <a th:href="@{/ingredients/new}" target="_blank" class="d-inline-block mb-3" style="font-size:0.9rem;">+ Новое сырьё (в новой вкладке)</a>
+
+  <div class="sticky-save-bar">
+    <a th:href="@{/recipes}" class="btn btn-outline-secondary">Отмена</a>
+    <button type="submit" class="btn btn-dark">Сохранить</button>
+  </div>
+</form>
+
+<form th:if="${!#lists.isEmpty(rows)}" th:action="@{'/recipes/product/' + ${product.id} + '/delete'}" method="post" class="form-page pt-0">
+  <button type="submit" class="btn btn-outline-danger w-100"
+          onclick="return confirm('Удалить весь рецепт этого товара?');">Удалить рецепт</button>
+</form>
+
+<template id="empty-row-template">
+  <div class="recipe-row" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+    <select name="ingredientId" class="form-select" style="flex:2;">
+      <option value="">— сырьё —</option>
+      <option th:each="i : ${ingredients}" th:value="${i.id}" th:text="${i.name} + ' (' + ${i.unit} + ')'"></option>
+    </select>
+    <input type="number" name="quantityPerUnit" step="0.01" min="0.01" class="form-control" placeholder="кол-во" style="flex:1;"/>
+    <button type="button" class="btn btn-outline-secondary remove-row" aria-label="Удалить строку" style="min-height:48px;">✕</button>
+  </div>
+</template>
+
+<script>
+  var rowsContainer = document.getElementById('recipe-rows');
+
+  function wireRemoveButton(row) {
+    var btn = row.querySelector('.remove-row');
+    btn.addEventListener('click', function () {
+      if (rowsContainer.children.length > 1) {
+        row.remove();
+      } else {
+        row.querySelector('select').value = '';
+        row.querySelector('input').value = '';
+      }
+    });
+  }
+
+  document.querySelectorAll('.recipe-row').forEach(wireRemoveButton);
+
+  document.getElementById('add-row').addEventListener('click', function () {
+    var template = document.getElementById('empty-row-template');
+    var clone = template.content.cloneNode(true);
+    rowsContainer.appendChild(clone);
+    wireRemoveButton(rowsContainer.lastElementChild);
+  });
+</script>
+</body>
+</html>

@@ -7,4 +7,6 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     java.util.List<Recipe> findAllByOrderByProductNameAsc();
 
     java.util.List<Recipe> findByProductId(Long productId);
+
+    void deleteByProductId(Long productId);
 }

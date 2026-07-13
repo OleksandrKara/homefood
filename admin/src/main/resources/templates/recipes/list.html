@@ -5,12 +5,13 @@
 <div th:replace="~{fragments/layout :: topbar(title='Рецепты')}"></div>
 
 <div class="card-list">
-  <a th:each="r : ${recipes}" th:href="@{'/recipes/' + ${r.id} + '/edit'}" class="item-card">
-    <div class="title" th:text="${r.product.name} + ' ' + ${r.product.sizeLabel}"></div>
-    <div class="subtitle" th:text="${#numbers.formatDecimal(r.quantityPerUnit, 1, 2)} + ' ' + ${r.ingredient.unit} + ' ' + ${r.ingredient.name} + ' на 1 банку'"></div>
+  <a th:each="entry : ${groupedRecipes}" th:href="@{'/recipes/product/' + ${entry.key.id}}" class="item-card">
+    <div class="title" th:text="${entry.key.name} + ' ' + ${entry.key.sizeLabel}"></div>
+    <div class="subtitle" th:each="r : ${entry.value}"
+         th:text="${#numbers.formatDecimal(r.quantityPerUnit, 1, 2)} + ' ' + ${r.ingredient.unit} + ' ' + ${r.ingredient.name}"></div>
   </a>
 
-  <div th:if="${#lists.isEmpty(recipes)}" class="empty-state">
+  <div th:if="${#maps.isEmpty(groupedRecipes)}" class="empty-state">
     <div class="icon">📋</div>
     Рецептов пока нет.<br/>Укажите, сколько сырья уходит на 1 банку товара.
   </div>
