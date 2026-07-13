@@ -11,10 +11,11 @@
 </head>
 <body>
 
-<div th:fragment="topbar(title)" class="top-bar">
+<th:block th:fragment="topbar(title)">
+<div class="top-bar">
   <h1 th:text="${title}">Заголовок</h1>
-  <details class="menu-wrap">
-    <summary class="btn-logout" aria-label="Меню">☰</summary>
+  <div class="menu-wrap">
+    <button type="button" class="btn-logout menu-toggle" aria-label="Меню">☰</button>
     <div class="dropdown-menu">
       <a th:href="@{/districts}">📍 Районы</a>
       <a th:href="@{/payment-methods}">💳 Способы оплаты</a>
@@ -22,8 +23,23 @@
         <button type="submit">⏻ Выйти</button>
       </form>
     </div>
-  </details>
+  </div>
 </div>
+<script>
+  document.querySelectorAll('.menu-toggle').forEach(function (btn) {
+    var menu = btn.nextElementSibling;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      menu.classList.toggle('show');
+    });
+    document.addEventListener('click', function (e) {
+      if (menu.classList.contains('show') && !menu.contains(e.target) && e.target !== btn) {
+        menu.classList.remove('show');
+      }
+    });
+  });
+</script>
+</th:block>
 
 <nav th:fragment="bottomnav(active)" class="bottom-nav">
   <a th:href="@{/orders}" th:classappend="${active == 'orders'} ? 'active'">
