@@ -13,6 +13,10 @@
     <div class="stats-label">⏳ Ожидается</div>
     <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(expectedTotal, 1, 2)}"></div>
   </div>
+  <div class="stats-card tips">
+    <div class="stats-label">💵 Чаевые</div>
+    <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(tipsTotal, 1, 2)}"></div>
+  </div>
 </div>
 
 <div th:if="${!#lists.isEmpty(requestedOrders)}">

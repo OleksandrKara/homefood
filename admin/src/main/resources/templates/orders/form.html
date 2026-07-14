@@ -93,15 +93,21 @@
     </select>
   </div>
 
-  <div id="payment-method-field" class="mb-3">
-    <label class="form-label" for="paymentMethod">Оплата</label>
-    <select th:field="*{paymentMethod}" class="form-select">
-      <option value="">— способ оплаты —</option>
-      <option th:each="pm : ${paymentMethods}" th:value="${pm.name}" th:text="${pm.name}"></option>
-      <option th:if="${order.paymentMethod != null and !order.paymentMethod.isEmpty() and !paymentMethods.![name].contains(order.paymentMethod)}"
-              th:value="${order.paymentMethod}" th:text="${order.paymentMethod}" selected></option>
-    </select>
-    <a th:href="@{/payment-methods/new}" target="_blank" class="d-inline-block mt-2" style="font-size:0.9rem;">+ Новый способ оплаты (в новой вкладке)</a>
+  <div id="done-fields">
+    <div class="mb-3">
+      <label class="form-label" for="paymentMethod">Оплата</label>
+      <select th:field="*{paymentMethod}" class="form-select">
+        <option value="">— способ оплаты —</option>
+        <option th:each="pm : ${paymentMethods}" th:value="${pm.name}" th:text="${pm.name}"></option>
+        <option th:if="${order.paymentMethod != null and !order.paymentMethod.isEmpty() and !paymentMethods.![name].contains(order.paymentMethod)}"
+                th:value="${order.paymentMethod}" th:text="${order.paymentMethod}" selected></option>
+      </select>
+      <a th:href="@{/payment-methods/new}" target="_blank" class="d-inline-block mt-2" style="font-size:0.9rem;">+ Новый способ оплаты (в новой вкладке)</a>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="tipAmount">Чаевые, $</label>
+      <input type="number" step="0.01" min="0" id="tipAmount" th:field="*{tipAmount}" class="form-control" placeholder="необязательно"/>
+    </div>
   </div>
 
   <div class="mb-3">
@@ -126,13 +132,13 @@
   });
   toggleDeliveryFields();
 
-  function togglePaymentMethodField() {
+  function toggleDoneFields() {
     var statusSelect = document.getElementById('status-select');
-    var paymentField = document.getElementById('payment-method-field');
-    paymentField.style.display = (statusSelect.value === 'DONE') ? '' : 'none';
+    var doneFields = document.getElementById('done-fields');
+    doneFields.style.display = (statusSelect.value === 'DONE') ? '' : 'none';
   }
-  document.getElementById('status-select').addEventListener('change', togglePaymentMethodField);
-  togglePaymentMethodField();
+  document.getElementById('status-select').addEventListener('change', toggleDoneFields);
+  toggleDoneFields();
 
   // Mirrors OrderPricing.calculateTotal server-side: jar 1 full price,
   // jars 2-3 discounted $1 each, jar 4+ back to full price.

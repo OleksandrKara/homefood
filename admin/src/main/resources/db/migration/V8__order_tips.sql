@@ -1,0 +1,1 @@
+ALTER TABLE orders ADD COLUMN tip_amount NUMERIC(10,2);

@@ -86,6 +86,7 @@ public class OrderController {
         model.addAttribute("jarsByDate", jarsByDate);
         model.addAttribute("soldTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.DONE));
         model.addAttribute("expectedTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.NEW));
+        model.addAttribute("tipsTotal", orderRepository.sumTipAmountByStatus(OrderStatus.DONE));
         model.addAttribute("processedCount", orderRepository.countByArchivedFalseAndStatusIn(PROCESSED_STATUSES));
         model.addAttribute("archivedCount", orderRepository.countByArchivedTrue());
         return "orders/list";

@@ -24,6 +24,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COALESCE(SUM(o.totalPrice), 0) FROM Order o WHERE o.status = :status")
     BigDecimal sumTotalPriceByStatus(OrderStatus status);
 
+    @Query("SELECT COALESCE(SUM(o.tipAmount), 0) FROM Order o WHERE o.status = :status")
+    BigDecimal sumTipAmountByStatus(OrderStatus status);
+
     @Query("SELECT DISTINCT o.deliveryAddress FROM Order o WHERE o.deliveryAddress IS NOT NULL AND o.deliveryAddress <> ''")
     List<String> findDistinctDeliveryAddresses();
 
