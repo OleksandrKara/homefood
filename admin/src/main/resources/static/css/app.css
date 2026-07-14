@@ -483,6 +483,17 @@ body.shop-body {
   will-change: transform;
 }
 
+/* Search bar (top of orders / clients lists) */
+.search-bar {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 12px 0;
+}
+.search-bar .form-control {
+  border-radius: 12px;
+  background: #fff;
+}
+
 /* Stats summary (top of orders) - grid auto-wraps so a 3rd card doesn't get
    cramped on narrow phones (falls back to 2-per-row instead of 3-across). */
 .stats-block {

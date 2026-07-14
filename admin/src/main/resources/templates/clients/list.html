@@ -4,8 +4,13 @@
 <body>
 <div th:replace="~{fragments/layout :: topbar(title='Клиенты')}"></div>
 
+<div class="search-bar">
+  <input type="search" id="client-search" class="form-control" placeholder="🔍 Поиск по имени, адресу..."/>
+</div>
+
 <div class="card-list">
-  <div th:each="c : ${clients}" class="item-card">
+  <div th:each="c : ${clients}" class="item-card"
+       th:attr="data-search=${#strings.toLowerCase((c.name ?: '') + ' ' + (c.address ?: ''))}">
     <a th:href="@{'/clients/' + ${c.id} + '/edit'}" style="text-decoration:none; color:inherit; display:block;">
       <div class="title" th:text="${c.name}"></div>
       <div class="subtitle" th:if="${c.phone != null and !c.phone.isEmpty()}" th:text="${c.phone}"></div>
@@ -24,8 +29,30 @@
   </div>
 </div>
 
+<div id="search-empty-state" class="empty-state" style="display:none;">
+  <div class="icon">🔍</div>
+  Ничего не найдено.
+</div>
+
 <a th:href="@{/clients/new}" class="fab" aria-label="Новый клиент">+</a>
 
 <div th:replace="~{fragments/layout :: bottomnav(active='clients')}"></div>
+<script>
+  (function () {
+    var searchInput = document.getElementById('client-search');
+    if (!searchInput) return;
+    var emptyState = document.getElementById('search-empty-state');
+    searchInput.addEventListener('input', function () {
+      var query = searchInput.value.trim().toLowerCase();
+      var anyVisible = false;
+      document.querySelectorAll('.item-card[data-search]').forEach(function (item) {
+        var matches = query === '' || item.getAttribute('data-search').indexOf(query) !== -1;
+        item.style.display = matches ? '' : 'none';
+        if (matches) { anyVisible = true; }
+      });
+      emptyState.style.display = (query !== '' && !anyVisible) ? '' : 'none';
+    });
+  })();
+</script>
 </body>
 </html>
