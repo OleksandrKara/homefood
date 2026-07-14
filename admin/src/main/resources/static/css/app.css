@@ -149,18 +149,27 @@ body {
   align-items: center;
   gap: 8px;
 }
+
+/* Collapsible date-group headers share the same card look as the
+   Обработанные/Архив nav-link-cards below - one consistent style for
+   anything the user can expand/collapse or drill into. */
 .group-toggle {
+  max-width: 720px;
+  margin: 10px auto 0;
+  padding: 14px 16px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 .group-chevron {
-  color: #adb5bd;
-  font-size: 1rem;
   transition: transform 0.2s ease;
+  display: inline-block;
 }
-.group-toggle.is-collapsed .group-chevron {
-  transform: rotate(-90deg);
+.group-toggle:not(.is-collapsed) .group-chevron {
+  transform: rotate(90deg);
 }
 .group-body.collapsed {
   display: none;
@@ -509,7 +518,7 @@ body.shop-body {
   padding: 3px 10px;
   border-radius: 20px;
 }
-.nav-link-card .chevron { color: #adb5bd; font-size: 1.1rem; }
+.chevron { color: #adb5bd; font-size: 1.1rem; }
 
 /* Form validation error banner */
 .form-error-banner {
