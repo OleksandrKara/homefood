@@ -29,16 +29,21 @@
 </div>
 
 <div th:each="dateEntry : ${groupedOrders}">
-  <h2 class="group-header">
+  <h2 class="group-header group-toggle" th:classappend="${dateEntry.key != 'Сегодня'} ? ' is-collapsed'">
     <span th:text="${dateEntry.key}"></span>
-    <span class="jars-badge" th:text="'🫙 ' + ${jarsByDate.get(dateEntry.key)}"></span>
+    <span class="group-header-right">
+      <span class="jars-badge" th:text="'🫙 ' + ${jarsByDate.get(dateEntry.key)}"></span>
+      <span class="group-chevron">⌄</span>
+    </span>
   </h2>
-  <div th:each="subEntry : ${dateEntry.value}">
-    <h3 class="subgroup-header" th:text="${subEntry.key}"></h3>
-    <div class="card-list">
-      <th:block th:each="o : ${subEntry.value}">
-        <div th:replace="~{fragments/order-card :: card(o=${o}, returnTo='/orders')}"></div>
-      </th:block>
+  <div class="group-body" th:classappend="${dateEntry.key != 'Сегодня'} ? ' collapsed'">
+    <div th:each="subEntry : ${dateEntry.value}">
+      <h3 class="subgroup-header" th:text="${subEntry.key}"></h3>
+      <div class="card-list">
+        <th:block th:each="o : ${subEntry.value}">
+          <div th:replace="~{fragments/order-card :: card(o=${o}, returnTo='/orders')}"></div>
+        </th:block>
+      </div>
     </div>
   </div>
 </div>
@@ -67,5 +72,16 @@
 
 <div th:replace="~{fragments/layout :: bottomnav(active='orders')}"></div>
 <div th:replace="~{fragments/order-card :: swipe-script}"></div>
+<script>
+  document.querySelectorAll('.group-toggle').forEach(function (header) {
+    header.addEventListener('click', function () {
+      header.classList.toggle('is-collapsed');
+      var body = header.nextElementSibling;
+      if (body && body.classList.contains('group-body')) {
+        body.classList.toggle('collapsed');
+      }
+    });
+  });
+</script>
 </body>
 </html>
