@@ -19,7 +19,11 @@
   </div>
 </div>
 
-<div th:if="${!#lists.isEmpty(requestedOrders)}">
+<div class="search-bar">
+  <input type="search" id="order-search" class="form-control" placeholder="🔍 Поиск по клиенту, району, адресу..."/>
+</div>
+
+<div th:if="${!#lists.isEmpty(requestedOrders)}" class="requested-group">
   <h2 class="group-header">🔔 Новые заявки</h2>
   <div class="card-list">
     <th:block th:each="o : ${requestedOrders}">
@@ -28,7 +32,7 @@
   </div>
 </div>
 
-<div th:each="dateEntry : ${groupedOrders}">
+<div th:each="dateEntry : ${groupedOrders}" class="date-group">
   <h2 class="group-header group-toggle" th:classappend="${dateEntry.key != 'Сегодня'} ? ' is-collapsed'">
     <span th:text="${dateEntry.key}"></span>
     <span class="group-header-right">
@@ -37,7 +41,7 @@
     </span>
   </h2>
   <div class="group-body" th:classappend="${dateEntry.key != 'Сегодня'} ? ' collapsed'">
-    <div th:each="subEntry : ${dateEntry.value}">
+    <div th:each="subEntry : ${dateEntry.value}" class="sub-group">
       <h3 class="subgroup-header" th:text="${subEntry.key}"></h3>
       <div class="card-list">
         <th:block th:each="o : ${subEntry.value}">
@@ -51,6 +55,11 @@
 <div th:if="${#lists.isEmpty(requestedOrders) and #maps.isEmpty(groupedOrders)}" class="empty-state">
   <div class="icon">📦</div>
   Активных заказов пока нет.<br/>Нажмите «+», чтобы добавить первый.
+</div>
+
+<div id="search-empty-state" class="empty-state" style="display:none;">
+  <div class="icon">🔍</div>
+  Ничего не найдено.
 </div>
 
 <div class="nav-link-list">
@@ -82,6 +91,76 @@
       }
     });
   });
+
+  (function () {
+    var searchInput = document.getElementById('order-search');
+    if (!searchInput) return;
+
+    var dateGroups = document.querySelectorAll('.date-group');
+    var requestedGroup = document.querySelector('.requested-group');
+    var emptyState = document.getElementById('search-empty-state');
+    var wasSearching = false;
+
+    searchInput.addEventListener('input', function () {
+      var query = searchInput.value.trim().toLowerCase();
+      var isSearching = query !== '';
+
+      if (isSearching && !wasSearching) {
+        // entering search mode - remember current collapse state so we can restore it after
+        dateGroups.forEach(function (group) {
+          var header = group.querySelector('.group-toggle');
+          header.dataset.wasCollapsed = header.classList.contains('is-collapsed') ? '1' : '0';
+        });
+      }
+
+      var anyVisible = false;
+
+      if (requestedGroup) {
+        var requestedMatches = 0;
+        requestedGroup.querySelectorAll('.swipe-item[data-search]').forEach(function (item) {
+          var matches = !isSearching || item.getAttribute('data-search').indexOf(query) !== -1;
+          item.style.display = matches ? '' : 'none';
+          if (matches) { requestedMatches++; }
+        });
+        requestedGroup.style.display = requestedMatches > 0 ? '' : 'none';
+        if (requestedMatches > 0) { anyVisible = true; }
+      }
+
+      dateGroups.forEach(function (group) {
+        var header = group.querySelector('.group-toggle');
+        var body = group.querySelector('.group-body');
+        var groupMatches = 0;
+
+        group.querySelectorAll('.sub-group').forEach(function (sub) {
+          var subMatches = 0;
+          sub.querySelectorAll('.swipe-item[data-search]').forEach(function (item) {
+            var matches = !isSearching || item.getAttribute('data-search').indexOf(query) !== -1;
+            item.style.display = matches ? '' : 'none';
+            if (matches) { subMatches++; }
+          });
+          sub.style.display = subMatches > 0 ? '' : 'none';
+          groupMatches += subMatches;
+        });
+
+        group.style.display = groupMatches > 0 ? '' : 'none';
+        if (groupMatches > 0) { anyVisible = true; }
+
+        if (isSearching) {
+          if (groupMatches > 0) {
+            header.classList.remove('is-collapsed');
+            body.classList.remove('collapsed');
+          }
+        } else if (wasSearching) {
+          var wasCollapsed = header.dataset.wasCollapsed === '1';
+          header.classList.toggle('is-collapsed', wasCollapsed);
+          body.classList.toggle('collapsed', wasCollapsed);
+        }
+      });
+
+      emptyState.style.display = (isSearching && !anyVisible) ? '' : 'none';
+      wasSearching = isSearching;
+    });
+  })();
 </script>
 </body>
 </html>

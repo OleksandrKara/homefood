@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<div th:fragment="card(o, returnTo)" class="swipe-item">
+<div th:fragment="card(o, returnTo)" class="swipe-item"
+     th:attr="data-search=${#strings.toLowerCase((o.client.name ?: '') + ' ' + (o.district ?: '') + ' ' + (o.deliveryAddress ?: ''))}">
 
   <form th:if="${!o.archived}" th:action="@{'/orders/' + ${o.id} + '/archive'}" method="post" class="swipe-action swipe-action-archive">
     <input type="hidden" name="returnTo" th:value="${returnTo}"/>
