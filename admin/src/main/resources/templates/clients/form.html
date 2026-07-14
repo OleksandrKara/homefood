@@ -35,5 +35,28 @@
     <button type="submit" class="btn btn-dark">Сохранить</button>
   </div>
 </form>
+
+<div th:if="${client.id != null}">
+  <h2 class="group-header">📦 История заказов</h2>
+  <div class="history-stats" th:if="${!#lists.isEmpty(orderHistory)}">
+    Всего заказов: <b th:text="${#lists.size(orderHistory)}"></b> ·
+    Куплено на: <b th:text="'$' + ${#numbers.formatDecimal(totalSpent, 1, 2)}"></b>
+  </div>
+  <div class="card-list">
+    <a th:each="o : ${orderHistory}" th:href="@{'/orders/' + ${o.id} + '/edit'}" class="item-card">
+      <div class="row-top">
+        <span class="title" th:text="${o.deliveryDate != null ? #temporals.format(o.deliveryDate, 'dd.MM.yyyy') : 'без даты'}"></span>
+        <span class="badge-status" th:classappend="'badge-status-' + ${o.status}"
+              th:text="${o.status.name() == 'REQUESTED' ? '🔔 Заявка' : (o.status.name() == 'NEW' ? 'Новый' : (o.status.name() == 'DONE' ? 'Готово' : 'Отменён'))}"></span>
+      </div>
+      <div class="subtitle"
+           th:text="${o.product.name} + ' ' + ${o.product.sizeLabel} + ' · ' + ${o.quantity} + ' шт' + (${o.totalPrice} != null ? ' · $' + ${#numbers.formatDecimal(o.totalPrice, 1, 2)} : '')"></div>
+    </a>
+  </div>
+  <div th:if="${#lists.isEmpty(orderHistory)}" class="empty-state" style="padding:30px 24px;">
+    <div class="icon">📦</div>
+    Заказов пока нет.
+  </div>
+</div>
 </body>
 </html>

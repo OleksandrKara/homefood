@@ -21,8 +21,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByArchivedTrue();
 
+    /** Full order history for a client (every status, including archived) - most recent first. */
+    List<Order> findByClientIdOrderByDeliveryDateDescCreatedAtDesc(Long clientId);
+
     @Query("SELECT COALESCE(SUM(o.totalPrice), 0) FROM Order o WHERE o.status = :status")
     BigDecimal sumTotalPriceByStatus(OrderStatus status);
+
+    @Query("SELECT COALESCE(SUM(o.totalPrice), 0) FROM Order o WHERE o.client.id = :clientId AND o.status = :status")
+    BigDecimal sumTotalPriceByClientIdAndStatus(Long clientId, OrderStatus status);
 
     @Query("SELECT COALESCE(SUM(o.tipAmount), 0) FROM Order o WHERE o.status = :status")
     BigDecimal sumTipAmountByStatus(OrderStatus status);

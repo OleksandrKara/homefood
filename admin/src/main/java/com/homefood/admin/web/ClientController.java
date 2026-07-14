@@ -1,6 +1,7 @@
 package com.homefood.admin.web;
 
 import com.homefood.admin.entity.Client;
+import com.homefood.admin.entity.OrderStatus;
 import com.homefood.admin.repository.ClientRepository;
 import com.homefood.admin.repository.OrderRepository;
 import jakarta.validation.Valid;
@@ -49,6 +50,8 @@ public class ClientController {
                 .orElseThrow(() -> new IllegalArgumentException("Client not found: " + id));
         model.addAttribute("client", client);
         model.addAttribute("addressSuggestions", addressSuggestions());
+        model.addAttribute("orderHistory", orderRepository.findByClientIdOrderByDeliveryDateDescCreatedAtDesc(id));
+        model.addAttribute("totalSpent", orderRepository.sumTotalPriceByClientIdAndStatus(id, OrderStatus.DONE));
         return "clients/form";
     }
 
