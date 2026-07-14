@@ -144,6 +144,27 @@ body {
   border-radius: 20px;
   white-space: nowrap;
 }
+.group-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.group-toggle {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.group-chevron {
+  color: #adb5bd;
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+.group-toggle.is-collapsed .group-chevron {
+  transform: rotate(-90deg);
+}
+.group-body.collapsed {
+  display: none;
+}
 .subgroup-header {
   max-width: 720px;
   margin: 10px auto 0;
