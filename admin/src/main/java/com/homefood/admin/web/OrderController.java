@@ -57,6 +57,7 @@ public class OrderController {
         List<Order> all = orderRepository.findAllByOrderByDeliveryDateAscDeliveryTimeAsc();
 
         Map<String, Map<String, List<Order>>> grouped = new LinkedHashMap<>();
+        Map<String, Integer> jarsByDate = new LinkedHashMap<>();
         List<Order> requested = new ArrayList<>();
 
         for (Order o : all) {
@@ -68,7 +69,7 @@ public class OrderController {
                 continue;
             }
             if (PROCESSED_STATUSES.contains(o.getStatus())) {
-                continue; // shown on /orders/processed instead
+                continue; // already sold/cancelled - excluded from the "still owed" count below too
             }
             String dateLabel = formatDateLabel(o.getDeliveryDate());
             String subLabel = o.getDeliveryType() == DeliveryType.PICKUP
@@ -77,10 +78,12 @@ public class OrderController {
             grouped.computeIfAbsent(dateLabel, k -> new LinkedHashMap<>())
                     .computeIfAbsent(subLabel, k -> new ArrayList<>())
                     .add(o);
+            jarsByDate.merge(dateLabel, o.getQuantity(), Integer::sum);
         }
 
         model.addAttribute("requestedOrders", requested);
         model.addAttribute("groupedOrders", grouped);
+        model.addAttribute("jarsByDate", jarsByDate);
         model.addAttribute("soldTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.DONE));
         model.addAttribute("expectedTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.NEW));
         model.addAttribute("processedCount", orderRepository.countByArchivedFalseAndStatusIn(PROCESSED_STATUSES));
