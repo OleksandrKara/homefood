@@ -1,4 +1,5 @@
 .env
+MENTORSHIP_NOTES.md
 node_modules/
 dist/
 build/
