@@ -15,17 +15,6 @@
   </div>
 </div>
 
-<div th:if="${!#maps.isEmpty(jarsByDate)}">
-  <h2 class="group-header">🫙 Осталось отвезти/отдать</h2>
-  <div class="nav-link-list jars-summary">
-    <div class="nav-link-card" th:each="entry : ${jarsByDate}">
-      <span class="nav-link-icon">🫙</span>
-      <span class="nav-link-label" th:text="${entry.key}"></span>
-      <span class="count-badge" th:text="${entry.value} + ' банок'"></span>
-    </div>
-  </div>
-</div>
-
 <div th:if="${!#lists.isEmpty(requestedOrders)}">
   <h2 class="group-header">🔔 Новые заявки</h2>
   <div class="card-list">
@@ -36,7 +25,10 @@
 </div>
 
 <div th:each="dateEntry : ${groupedOrders}">
-  <h2 class="group-header" th:text="${dateEntry.key}"></h2>
+  <h2 class="group-header">
+    <span th:text="${dateEntry.key}"></span>
+    <span class="jars-badge" th:text="'🫙 ' + ${jarsByDate.get(dateEntry.key)}"></span>
+  </h2>
   <div th:each="subEntry : ${dateEntry.value}">
     <h3 class="subgroup-header" th:text="${subEntry.key}"></h3>
     <div class="card-list">
