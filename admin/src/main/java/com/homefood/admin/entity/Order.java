@@ -3,6 +3,7 @@ package com.homefood.admin.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -71,6 +72,10 @@ public class Order {
     @Size(max = 50, message = "Слишком длинный способ оплаты")
     @Column(name = "payment_method")
     private String paymentMethod;
+
+    @PositiveOrZero(message = "Чаевые не могут быть отрицательными")
+    @Column(name = "tip_amount")
+    private BigDecimal tipAmount;
 
     @Size(max = 2000, message = "Слишком длинный текст")
     @Column(columnDefinition = "TEXT")
