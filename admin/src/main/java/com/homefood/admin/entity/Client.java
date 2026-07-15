@@ -1,5 +1,6 @@
 package com.homefood.admin.entity;
 
+import com.homefood.admin.phone.PhoneNumbers;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -37,4 +38,12 @@ public class Client {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+
+    /** Keeps every stored phone in one consistent format (see PhoneNumbers.canonicalize)
+     * regardless of which path saved it - public shop, admin form, anywhere else later. */
+    @PrePersist
+    @PreUpdate
+    private void normalizePhone() {
+        phone = PhoneNumbers.canonicalize(phone);
+    }
 }

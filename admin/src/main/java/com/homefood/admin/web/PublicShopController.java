@@ -1,6 +1,7 @@
 package com.homefood.admin.web;
 
 import com.homefood.admin.entity.*;
+import com.homefood.admin.phone.PhoneNumbers;
 import com.homefood.admin.pricing.OrderPricing;
 import com.homefood.admin.repository.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -158,15 +159,30 @@ public class PublicShopController {
             return "redirect:/shop?error=1";
         }
 
-        String trimmedPhone = phone.trim();
+        // Canonical form (see Client.normalizePhone) so the rate-limit lookup and the dedup lookup
+        // below both match however staff/customers already have this number stored, regardless of
+        // how it was formatted at the time.
+        String canonicalPhone = PhoneNumbers.canonicalize(phone);
         Instant hourAgo = now.minus(1, ChronoUnit.HOURS);
-        if (orderRepository.countByClientPhoneSince(trimmedPhone, hourAgo) >= MAX_RESERVATIONS_PER_PHONE_PER_HOUR) {
+        if (orderRepository.countByClientPhoneSince(canonicalPhone, hourAgo) >= MAX_RESERVATIONS_PER_PHONE_PER_HOUR) {
             return "redirect:/shop?error=1";
         }
 
-        Client client = new Client();
-        client.setName(name.trim());
-        client.setPhone(trimmedPhone);
+        // Reuse the existing contact for this phone instead of creating a duplicate client every
+        // time the same person orders again.
+        Client client = findExistingClientByPhone(canonicalPhone);
+        String submittedName = name.trim();
+        if (client == null) {
+            client = new Client();
+            client.setName(submittedName);
+            client.setPhone(canonicalPhone);
+        } else if (client.getName() == null || submittedName.length() > client.getName().length()) {
+            // Only overwrite the stored name when the freshly-typed one is longer: more likely to
+            // be the complete/correct name, whether the stored one was truncated or just wrong. A
+            // *shorter* new entry is more likely a quick retype and shouldn't shrink a fuller name
+            // already on file.
+            client.setName(submittedName);
+        }
         clientRepository.save(client);
 
         for (Order order : newOrders) {
@@ -175,5 +191,28 @@ public class PublicShopController {
         orderRepository.saveAll(newOrders);
 
         return "redirect:/shop?reserved=1";
+    }
+
+    /**
+     * Lets the shop page greet a returning customer as soon as they finish typing their phone,
+     * without waiting for full form submission. Deliberately returns only a boolean - never the
+     * stored name - since this is an unauthenticated endpoint and echoing back "yes, this phone
+     * belongs to <name>" would leak customer names to anyone probing phone numbers.
+     */
+    @GetMapping("/client-lookup")
+    @ResponseBody
+    public Map<String, Boolean> clientLookup(@RequestParam(required = false) String phone) {
+        return Map.of("found", findExistingClientByPhone(phone) != null);
+    }
+
+    private Client findExistingClientByPhone(String phone) {
+        String normalized = PhoneNumbers.normalize(phone);
+        if (normalized.isEmpty()) {
+            return null;
+        }
+        return clientRepository.findAll().stream()
+                .filter(c -> normalized.equals(PhoneNumbers.normalize(c.getPhone())))
+                .findFirst()
+                .orElse(null);
     }
 }
