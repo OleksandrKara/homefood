@@ -140,7 +140,7 @@ public class OrderController {
         Product product = productRef(productId);
         order.setClient(clientRef(clientId));
         order.setProduct(product);
-        order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), order.getQuantity()));
+        order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), order.getQuantity(), product.isTieredDiscountEnabled()));
         orderRepository.save(order);
         return "redirect:/orders";
     }
@@ -167,7 +167,7 @@ public class OrderController {
         order.setArchived(existing.isArchived());
         order.setClient(clientRef(clientId));
         order.setProduct(product);
-        order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), order.getQuantity()));
+        order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), order.getQuantity(), product.isTieredDiscountEnabled()));
         orderRepository.save(order);
         return "redirect:/orders";
     }

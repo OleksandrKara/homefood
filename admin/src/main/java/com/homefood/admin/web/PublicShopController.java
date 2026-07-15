@@ -144,7 +144,7 @@ public class PublicShopController {
             order.setQuantity(quantity);
             order.setDeliveryType(DeliveryType.PICKUP);
             order.setStatus(OrderStatus.REQUESTED);
-            order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), quantity));
+            order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), quantity, product.isTieredDiscountEnabled()));
             order.setDeliveryDate(preferredDate);
             order.setDeliveryTime(preferredTime);
             order.setCreatedAt(now);

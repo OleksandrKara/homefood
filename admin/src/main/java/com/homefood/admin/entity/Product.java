@@ -55,4 +55,10 @@ public class Product {
     @Size(max = 500, message = "Слишком длинная ссылка")
     @Column(name = "image_url")
     private String imageUrl;
+
+    /** Jars #2-3 discounted $1 each when enabled (see OrderPricing) - kept for Квашеная капуста
+     * only; every other product uses flat price x quantity, since the discount doesn't make
+     * sense for count/weight-based items like a cake or a bag of dumplings. */
+    @Column(name = "tiered_discount_enabled", nullable = false)
+    private boolean tieredDiscountEnabled = false;
 }

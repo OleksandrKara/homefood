@@ -30,7 +30,7 @@
   <div th:if="${error}" class="shop-alert shop-alert-error" th:text="#{shop.alert.error}"></div>
 
   <div th:each="p : ${availableProducts}" class="shop-product-card"
-       th:attr="data-product-id=${p.id},data-price=${p.basePrice},data-max=${maxQuantity}">
+       th:attr="data-product-id=${p.id},data-price=${p.basePrice},data-max=${maxQuantity},data-discount=${p.tieredDiscountEnabled}">
     <div class="shop-product-photo">
       <img th:if="${p.imageUrl != null and !p.imageUrl.isEmpty()}" th:src="${p.imageUrl}" alt=""/>
       <span th:unless="${p.imageUrl != null and !p.imageUrl.isEmpty()}" th:text="${iconByProduct.get(p.id)}"></span>
@@ -53,7 +53,7 @@
 
   <div th:if="${!#lists.isEmpty(onDemandProducts)}" class="shop-section-label" th:text="#{shop.section.ondemand}"></div>
   <div th:each="p : ${onDemandProducts}" class="shop-product-card shop-product-card-compact"
-       th:attr="data-product-id=${p.id},data-price=${p.basePrice},data-max=${maxQuantityOnDemand}">
+       th:attr="data-product-id=${p.id},data-price=${p.basePrice},data-max=${maxQuantityOnDemand},data-discount=${p.tieredDiscountEnabled}">
     <div class="shop-product-photo">
       <img th:if="${p.imageUrl != null and !p.imageUrl.isEmpty()}" th:src="${p.imageUrl}" alt=""/>
       <span th:unless="${p.imageUrl != null and !p.imageUrl.isEmpty()}" th:text="${iconByProduct.get(p.id)}"></span>
@@ -146,9 +146,12 @@
   var countPrefix = /*[[#{shop.cart.count.prefix}]]*/ 'In cart:';
   var totalPrefix = /*[[#{shop.cart.total.prefix}]]*/ 'Total:';
 
-  // Mirrors OrderPricing.calculateTotal server-side: jar 1 full price, jars 2-3 discounted
-  // $1 each, jar 4+ back to full price.
-  function calculateTotal(basePrice, quantity) {
+  // Mirrors OrderPricing.calculateTotal server-side: flat price x quantity, unless the product
+  // has the tiered discount enabled (jars 2-3 get $1 off each) - currently only Квашеная капуста.
+  function calculateTotal(basePrice, quantity, tieredDiscountEnabled) {
+    if (!tieredDiscountEnabled) {
+      return basePrice * quantity;
+    }
     var total = 0;
     for (var jarIndex = 1; jarIndex <= quantity; jarIndex++) {
       total += (jarIndex === 2 || jarIndex === 3) ? (basePrice - 1) : basePrice;
@@ -174,7 +177,7 @@
       var qty = parseInt(card.querySelector('.shop-qty-value').textContent, 10) || 0;
       if (qty > 0) {
         itemCount += 1;
-        total += calculateTotal(parseFloat(card.getAttribute('data-price')), qty);
+        total += calculateTotal(parseFloat(card.getAttribute('data-price')), qty, card.getAttribute('data-discount') === 'true');
       }
     });
 
