@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head(title=${order.id} != null ? 'Изменить заказ' : 'Новый заказ')}"></head>
-<body>
+<body th:attr="data-context-path=@{/}">
 <div th:replace="~{fragments/layout :: topbar(title=${order.id} != null ? 'Изменить заказ' : 'Новый заказ')}"></div>
 
 <form th:action="${order.id} != null ? @{'/orders/' + ${order.id}} : @{/orders}"
@@ -222,6 +222,14 @@
   document.getElementById('quantity-input').addEventListener('input', updatePriceEstimate);
   updatePriceEstimate();
 
+  // The app is deployed under a context path (/admin) that th:href/th:action handle
+  // automatically, but a hand-built fetch() URL doesn't go through Thymeleaf at request time -
+  // without this prefix "/clients/quick" resolves against the domain root, missing /admin
+  // entirely, and nginx 404s it instead of proxying to the app. Read it from a data attribute
+  // (set via th:attr, which is reliable) rather than JS inlining, which needs
+  // th:inline="javascript" on the <script> tag to actually substitute values.
+  var contextPath = document.body.getAttribute('data-context-path') || '/';
+
   // fetch()-based requests below don't go through a <form>, so the Thymeleaf Spring Security
   // dialect never auto-injects a CSRF token into them - read it from the <meta> tags instead.
   function csrfHeaders() {
@@ -285,7 +293,7 @@
     body.set('address', document.getElementById('client-modal-address').value.trim());
     body.set('notes', document.getElementById('client-modal-notes').value.trim());
 
-    var url = mode === 'edit' ? ('/clients/' + select.value + '/quick') : '/clients/quick';
+    var url = mode === 'edit' ? (contextPath + 'clients/' + select.value + '/quick') : (contextPath + 'clients/quick');
     fetch(url, {
       method: 'POST',
       headers: csrfHeaders(),
@@ -336,8 +344,8 @@
 
   // ---- Add a district / payment method without leaving the order form ----
   var quickAddConfig = {
-    district: { title: 'Новый район', url: '/districts/quick', selectId: 'district' },
-    paymentMethod: { title: 'Новый способ оплаты', url: '/payment-methods/quick', selectId: 'paymentMethod' }
+    district: { title: 'Новый район', url: contextPath + 'districts/quick', selectId: 'district' },
+    paymentMethod: { title: 'Новый способ оплаты', url: contextPath + 'payment-methods/quick', selectId: 'paymentMethod' }
   };
 
   function openQuickAdd(type) {
