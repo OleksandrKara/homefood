@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PaymentMethodRepository extends JpaRepository<PaymentMethod, Long> {
     java.util.List<PaymentMethod> findAllByOrderByNameAsc();
+
+    java.util.Optional<PaymentMethod> findByNameIgnoreCase(String name);
 }

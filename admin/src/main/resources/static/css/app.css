@@ -670,3 +670,65 @@ body.shop-body {
   font-weight: 500;
 }
 .form-error-banner div { padding: 2px 0; }
+
+/* Text-only "+ add" action under a select (replaces the old open-in-new-tab links). */
+.btn-link-action {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #0d6efd;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* A select with a small icon button (e.g. edit) beside it. */
+.input-with-action {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.input-with-action select { flex: 1; }
+.btn-icon-action {
+  flex: 0 0 auto;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid #ced4da;
+  background: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.btn-icon-action:disabled { opacity: 0.35; cursor: default; }
+
+/* Bottom-sheet style modal used for quick add/edit forms (client, district, payment method)
+   launched from within another form - these live outside that form in the DOM so an accidental
+   Enter keypress inside the modal never submits the page underneath. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1060;
+}
+.modal-box {
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 20px 16px calc(20px + var(--safe-bottom));
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-box h3 { margin: 0 0 14px; font-size: 1.1rem; }
+.modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+.modal-actions .btn { flex: 1; }
+@media (min-width: 560px) {
+  .modal-overlay { align-items: center; }
+  .modal-box { border-radius: 16px; }
+}

@@ -13,13 +13,18 @@
 
   <div class="mb-3">
     <label class="form-label" for="clientId">Клиент</label>
-    <select id="clientId" name="clientId" class="form-select" required>
-      <option value="">— выберите клиента —</option>
-      <option th:each="c : ${clients}" th:value="${c.id}"
-              th:text="${c.name} + (${c.phone} != null ? ' — ' + ${c.phone} : '')"
-              th:selected="${order.client != null and order.client.id == c.id}"></option>
-    </select>
-    <a th:href="@{/clients/new}" target="_blank" class="d-inline-block mt-2" style="font-size:0.9rem;">+ Новый клиент (в новой вкладке)</a>
+    <div class="input-with-action">
+      <select id="clientId" name="clientId" class="form-select" required>
+        <option value="">— выберите клиента —</option>
+        <option th:each="c : ${clients}" th:value="${c.id}"
+                th:text="${c.name} + (${c.phone} != null ? ' — ' + ${c.phone} : '')"
+                th:attr="data-name=${c.name},data-phone=${c.phone},data-address=${c.address},data-notes=${c.notes}"
+                th:selected="${order.client != null and order.client.id == c.id}"></option>
+      </select>
+      <button type="button" id="edit-client-btn" class="btn-icon-action" title="Редактировать клиента"
+              th:disabled="${order.client == null}">✏️</button>
+    </div>
+    <button type="button" class="btn-link-action" onclick="openClientModal('add')">+ Новый клиент</button>
   </div>
 
   <div class="mb-3">
@@ -58,7 +63,7 @@
         <option th:if="${order.district != null and !order.district.isEmpty() and !districts.![name].contains(order.district)}"
                 th:value="${order.district}" th:text="${order.district}" selected></option>
       </select>
-      <a th:href="@{/districts/new}" target="_blank" class="d-inline-block mt-2" style="font-size:0.9rem;">+ Новый район (в новой вкладке)</a>
+      <button type="button" class="btn-link-action" onclick="openQuickAdd('district')">+ Новый район</button>
     </div>
     <div class="mb-3">
       <label class="form-label" for="deliveryAddress">Адрес доставки</label>
@@ -102,7 +107,7 @@
         <option th:if="${order.paymentMethod != null and !order.paymentMethod.isEmpty() and !paymentMethods.![name].contains(order.paymentMethod)}"
                 th:value="${order.paymentMethod}" th:text="${order.paymentMethod}" selected></option>
       </select>
-      <a th:href="@{/payment-methods/new}" target="_blank" class="d-inline-block mt-2" style="font-size:0.9rem;">+ Новый способ оплаты (в новой вкладке)</a>
+      <button type="button" class="btn-link-action" onclick="openQuickAdd('paymentMethod')">+ Новый способ оплаты</button>
     </div>
     <div class="mb-3">
       <label class="form-label" for="tipAmount">Чаевые, $</label>
@@ -120,6 +125,50 @@
     <button type="submit" class="btn btn-dark">Сохранить</button>
   </div>
 </form>
+
+<!-- Add/edit client without leaving the order form. Kept outside the order <form> so pressing
+     Enter in a modal field never submits the (unrelated) order form underneath. -->
+<div id="client-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <h3 id="client-modal-title"></h3>
+    <div class="mb-3">
+      <label class="form-label" for="client-modal-name">Имя</label>
+      <input type="text" id="client-modal-name" class="form-control" required/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="client-modal-phone">Телефон</label>
+      <input type="tel" id="client-modal-phone" class="form-control" placeholder="+1 555 123 4567"/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="client-modal-address">Адрес</label>
+      <input type="text" id="client-modal-address" class="form-control"/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="client-modal-notes">Заметки</label>
+      <textarea id="client-modal-notes" class="form-control"></textarea>
+    </div>
+    <div id="client-modal-error" class="form-error-banner" style="display:none;"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline-secondary" onclick="closeClientModal()">Отмена</button>
+      <button type="button" class="btn btn-dark" onclick="submitClientModal()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add a district or payment method without leaving the order form. -->
+<div id="quick-add-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <h3 id="quick-add-title"></h3>
+    <div class="mb-3">
+      <input type="text" id="quick-add-input" class="form-control" placeholder="Название"/>
+    </div>
+    <div id="quick-add-error" class="form-error-banner" style="display:none;"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline-secondary" onclick="closeQuickAddModal()">Отмена</button>
+      <button type="button" class="btn btn-dark" onclick="submitQuickAdd()">Добавить</button>
+    </div>
+  </div>
+</div>
 
 <script>
   function toggleDeliveryFields() {
@@ -172,6 +221,198 @@
   document.getElementById('product-select').addEventListener('change', updatePriceEstimate);
   document.getElementById('quantity-input').addEventListener('input', updatePriceEstimate);
   updatePriceEstimate();
+
+  // fetch()-based requests below don't go through a <form>, so the Thymeleaf Spring Security
+  // dialect never auto-injects a CSRF token into them - read it from the <meta> tags instead.
+  function csrfHeaders() {
+    var tokenMeta = document.querySelector('meta[name="_csrf"]');
+    var headerMeta = document.querySelector('meta[name="_csrf_header"]');
+    var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (tokenMeta && headerMeta) {
+      headers[headerMeta.getAttribute('content')] = tokenMeta.getAttribute('content');
+    }
+    return headers;
+  }
+
+  // ---- Add/edit client without leaving the order form ----
+  function openClientModal(mode) {
+    var modal = document.getElementById('client-modal');
+    var nameInput = document.getElementById('client-modal-name');
+    var phoneInput = document.getElementById('client-modal-phone');
+    var addressInput = document.getElementById('client-modal-address');
+    var notesInput = document.getElementById('client-modal-notes');
+    document.getElementById('client-modal-error').style.display = 'none';
+    modal.dataset.mode = mode;
+    if (mode === 'edit') {
+      var select = document.getElementById('clientId');
+      var option = select.options[select.selectedIndex];
+      if (!option || !option.value) { return; }
+      document.getElementById('client-modal-title').textContent = 'Редактировать клиента';
+      nameInput.value = option.getAttribute('data-name') || '';
+      phoneInput.value = option.getAttribute('data-phone') || '';
+      addressInput.value = option.getAttribute('data-address') || '';
+      notesInput.value = option.getAttribute('data-notes') || '';
+    } else {
+      document.getElementById('client-modal-title').textContent = 'Новый клиент';
+      nameInput.value = '';
+      phoneInput.value = '';
+      addressInput.value = '';
+      notesInput.value = '';
+    }
+    modal.style.display = 'flex';
+    nameInput.focus();
+  }
+
+  function closeClientModal() {
+    document.getElementById('client-modal').style.display = 'none';
+  }
+
+  function submitClientModal() {
+    var modal = document.getElementById('client-modal');
+    var mode = modal.dataset.mode;
+    var select = document.getElementById('clientId');
+    var errorEl = document.getElementById('client-modal-error');
+    var name = document.getElementById('client-modal-name').value.trim();
+    errorEl.style.display = 'none';
+    if (!name) {
+      errorEl.textContent = 'Укажите имя';
+      errorEl.style.display = '';
+      return;
+    }
+    var body = new URLSearchParams();
+    body.set('name', name);
+    body.set('phone', document.getElementById('client-modal-phone').value.trim());
+    body.set('address', document.getElementById('client-modal-address').value.trim());
+    body.set('notes', document.getElementById('client-modal-notes').value.trim());
+
+    var url = mode === 'edit' ? ('/clients/' + select.value + '/quick') : '/clients/quick';
+    fetch(url, {
+      method: 'POST',
+      headers: csrfHeaders(),
+      body: body.toString()
+    }).then(function (res) {
+      return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+    }).then(function (result) {
+      if (!result.ok) {
+        errorEl.textContent = result.data.error || 'Не удалось сохранить';
+        errorEl.style.display = '';
+        return;
+      }
+      var c = result.data;
+      var label = c.name + (c.phone ? ' — ' + c.phone : '');
+      var option;
+      if (mode === 'edit') {
+        option = select.options[select.selectedIndex];
+      } else {
+        option = document.createElement('option');
+        option.value = c.id;
+        select.appendChild(option);
+        select.value = c.id;
+      }
+      option.textContent = label;
+      option.setAttribute('data-name', c.name);
+      option.setAttribute('data-phone', c.phone || '');
+      option.setAttribute('data-address', c.address || '');
+      option.setAttribute('data-notes', c.notes || '');
+      document.getElementById('edit-client-btn').disabled = !select.value;
+      closeClientModal();
+    }).catch(function () {
+      errorEl.textContent = 'Ошибка сети, попробуйте ещё раз';
+      errorEl.style.display = '';
+    });
+  }
+
+  document.getElementById('edit-client-btn').addEventListener('click', function () {
+    openClientModal('edit');
+  });
+  document.getElementById('clientId').addEventListener('change', function () {
+    document.getElementById('edit-client-btn').disabled = !this.value;
+  });
+  ['client-modal-name', 'client-modal-phone', 'client-modal-address'].forEach(function (id) {
+    document.getElementById(id).addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); submitClientModal(); }
+    });
+  });
+
+  // ---- Add a district / payment method without leaving the order form ----
+  var quickAddConfig = {
+    district: { title: 'Новый район', url: '/districts/quick', selectId: 'district' },
+    paymentMethod: { title: 'Новый способ оплаты', url: '/payment-methods/quick', selectId: 'paymentMethod' }
+  };
+
+  function openQuickAdd(type) {
+    var cfg = quickAddConfig[type];
+    var modal = document.getElementById('quick-add-modal');
+    modal.dataset.type = type;
+    document.getElementById('quick-add-title').textContent = cfg.title;
+    var input = document.getElementById('quick-add-input');
+    input.value = '';
+    document.getElementById('quick-add-error').style.display = 'none';
+    modal.style.display = 'flex';
+    input.focus();
+  }
+
+  function closeQuickAddModal() {
+    document.getElementById('quick-add-modal').style.display = 'none';
+  }
+
+  function submitQuickAdd() {
+    var modal = document.getElementById('quick-add-modal');
+    var cfg = quickAddConfig[modal.dataset.type];
+    var input = document.getElementById('quick-add-input');
+    var errorEl = document.getElementById('quick-add-error');
+    var name = input.value.trim();
+    errorEl.style.display = 'none';
+    if (!name) {
+      errorEl.textContent = 'Укажите название';
+      errorEl.style.display = '';
+      return;
+    }
+    var body = new URLSearchParams();
+    body.set('name', name);
+    fetch(cfg.url, {
+      method: 'POST',
+      headers: csrfHeaders(),
+      body: body.toString()
+    }).then(function (res) {
+      return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+    }).then(function (result) {
+      if (!result.ok) {
+        errorEl.textContent = result.data.error || 'Не удалось сохранить';
+        errorEl.style.display = '';
+        return;
+      }
+      var select = document.getElementById(cfg.selectId);
+      var newName = result.data.name;
+      var found = Array.prototype.some.call(select.options, function (o) { return o.value === newName; });
+      if (!found) {
+        var opt = document.createElement('option');
+        opt.value = newName;
+        opt.textContent = newName;
+        select.appendChild(opt);
+      }
+      select.value = newName;
+      closeQuickAddModal();
+    }).catch(function () {
+      errorEl.textContent = 'Ошибка сети, попробуйте ещё раз';
+      errorEl.style.display = '';
+    });
+  }
+
+  document.getElementById('quick-add-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitQuickAdd(); }
+  });
+
+  document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) { overlay.style.display = 'none'; }
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay').forEach(function (o) { o.style.display = 'none'; });
+    }
+  });
 </script>
 </body>
 </html>
