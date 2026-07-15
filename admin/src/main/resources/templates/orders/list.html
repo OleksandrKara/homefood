@@ -117,7 +117,7 @@
 
       if (requestedGroup) {
         var requestedMatches = 0;
-        requestedGroup.querySelectorAll('.swipe-item[data-search]').forEach(function (item) {
+        requestedGroup.querySelectorAll('.order-card[data-search]').forEach(function (item) {
           var matches = !isSearching || item.getAttribute('data-search').indexOf(query) !== -1;
           item.style.display = matches ? '' : 'none';
           if (matches) { requestedMatches++; }
@@ -133,7 +133,7 @@
 
         group.querySelectorAll('.sub-group').forEach(function (sub) {
           var subMatches = 0;
-          sub.querySelectorAll('.swipe-item[data-search]').forEach(function (item) {
+          sub.querySelectorAll('.order-card[data-search]').forEach(function (item) {
             var matches = !isSearching || item.getAttribute('data-search').indexOf(query) !== -1;
             item.style.display = matches ? '' : 'none';
             if (matches) { subMatches++; }
