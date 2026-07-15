@@ -9,7 +9,7 @@
     <div class="row-top">
       <span class="title" th:text="${i.name}"></span>
       <span class="badge-status" th:classappend="${i.stockQuantity.signum() gt 0} ? 'badge-status-DONE' : 'badge-status-CANCELLED'"
-            th:text="${#numbers.formatDecimal(i.stockQuantity, 1, 2)} + ' ' + ${i.unit}"></span>
+            th:text="${#numbers.formatDecimal(i.stockQuantity, 1, 2, 'POINT')} + ' ' + ${i.unit}"></span>
     </div>
   </a>
 

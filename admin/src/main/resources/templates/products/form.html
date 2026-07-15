@@ -39,6 +39,13 @@
       Показывается клиентам на публичной странице для неактивных товаров ("под заказ").
     </div>
   </div>
+  <div class="mb-3">
+    <label class="form-label" for="imageUrl">Фото (ссылка, для публичной страницы)</label>
+    <input type="text" th:field="*{imageUrl}" class="form-control" placeholder="https://..."/>
+    <div style="font-size:0.85rem; color:#868e96; margin-top:6px;">
+      Необязательно. Пока не заполнено — на публичной странице показывается иконка вместо фото.
+    </div>
+  </div>
 
   <div class="sticky-save-bar">
     <a th:href="@{/products}" class="btn btn-outline-secondary">Отмена</a>

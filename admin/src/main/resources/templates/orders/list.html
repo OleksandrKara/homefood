@@ -7,15 +7,15 @@
 <div class="stats-block">
   <div class="stats-card sold">
     <div class="stats-label">💰 Продано</div>
-    <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(soldTotal, 1, 2)}"></div>
+    <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(soldTotal, 1, 2, 'POINT')}"></div>
   </div>
   <div class="stats-card expected">
     <div class="stats-label">⏳ Ожидается</div>
-    <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(expectedTotal, 1, 2)}"></div>
+    <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(expectedTotal, 1, 2, 'POINT')}"></div>
   </div>
   <div class="stats-card tips">
     <div class="stats-label">💵 Чаевые</div>
-    <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(tipsTotal, 1, 2)}"></div>
+    <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(tipsTotal, 1, 2, 'POINT')}"></div>
   </div>
 </div>
 

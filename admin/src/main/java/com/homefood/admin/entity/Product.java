@@ -48,4 +48,11 @@ public class Product {
     @Size(max = 255, message = "Слишком длинный текст")
     @Column(name = "prep_time_label")
     private String prepTimeLabel;
+
+    /** Optional photo URL for the public shop card. Falls back to an emoji icon when blank -
+     * see shop/index.html - since there's no legitimate way to auto-source real photos of a
+     * specific home cook's dishes. */
+    @Size(max = 500, message = "Слишком длинная ссылка")
+    @Column(name = "image_url")
+    private String imageUrl;
 }

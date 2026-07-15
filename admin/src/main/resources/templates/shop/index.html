@@ -3,62 +3,87 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
-  <title>Домашняя еда — заказ и самовывоз</title>
+  <title th:text="#{shop.title} + ' — Pickup'">homefood</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link rel="stylesheet" th:href="@{/css/app.css}"/>
 </head>
 <body class="shop-body">
 
 <div class="shop-hero">
-  <div class="shop-hero-emoji">🥬</div>
-  <h1>Домашняя еда</h1>
-  <p>Свежее, натуральное, готово к самовывозу</p>
+  <div class="shop-lang-switch">
+    <a th:href="@{/shop(lang=ru)}" th:classappend="${#locale.language == 'ru'} ? ' active'">RU</a>
+    <span>·</span>
+    <a th:href="@{/shop(lang=en)}" th:classappend="${#locale.language == 'en'} ? ' active'">EN</a>
+  </div>
+  <div class="shop-hero-emoji">🍲</div>
+  <h1 th:text="#{shop.title}"></h1>
+  <p th:text="#{shop.subtitle}"></p>
+  <a class="shop-address-link" th:if="${pickupAddress != null and !pickupAddress.isEmpty()}"
+     th:href="'https://maps.google.com/?q=' + ${#uris.escapeQueryParam(pickupAddress)}" target="_blank">
+    <span th:text="#{shop.address.pickup}"></span> <span th:text="${pickupAddress}"></span>
+  </a>
 </div>
 
 <div class="shop-wrap">
 
-  <div th:if="${reserved}" class="shop-alert shop-alert-success">
-    ✅ Заявка отправлена! Мы свяжемся с вами по телефону, чтобы подтвердить заказ.
-  </div>
-  <div th:if="${error}" class="shop-alert shop-alert-error">
-    ⚠️ Проверьте имя, телефон и количество и попробуйте ещё раз.
-  </div>
+  <div th:if="${reserved}" class="shop-alert shop-alert-success" th:text="#{shop.alert.success}"></div>
+  <div th:if="${error}" class="shop-alert shop-alert-error" th:text="#{shop.alert.error}"></div>
 
-  <div th:each="p : ${availableProducts}" class="shop-product-card">
-    <div class="shop-product-top">
-      <div class="shop-product-name" th:text="${p.name} + ' ' + ${p.sizeLabel}"></div>
-      <div class="shop-product-price" th:text="'$' + ${#numbers.formatDecimal(p.basePrice, 1, 2)}"></div>
+  <div th:each="p : ${availableProducts}" class="shop-product-card"
+       th:attr="data-product-id=${p.id},data-price=${p.basePrice},data-max=${maxQuantity}">
+    <div class="shop-product-photo">
+      <img th:if="${p.imageUrl != null and !p.imageUrl.isEmpty()}" th:src="${p.imageUrl}" alt=""/>
+      <span th:unless="${p.imageUrl != null and !p.imageUrl.isEmpty()}" th:text="${iconByProduct.get(p.id)}"></span>
     </div>
-    <span class="shop-stock-badge" th:classappend="${p.stockQuantity > 0} ? 'shop-stock-in' : 'shop-stock-out'"
-          th:text="${p.stockQuantity > 0} ? ('В наличии: ' + ${p.stockQuantity} + ' шт') : 'Сейчас нет в наличии'"></span>
+    <div class="shop-product-info">
+      <div class="shop-product-top">
+        <div class="shop-product-name" th:text="${p.name} + ' ' + ${p.sizeLabel}"></div>
+        <div class="shop-product-price" th:text="'$' + ${#numbers.formatDecimal(p.basePrice, 1, 2, 'POINT')}"></div>
+      </div>
+      <span class="shop-stock-badge shop-stock-in" th:if="${p.stockQuantity > 0}" th:text="#{shop.stock.in(${p.stockQuantity})}"></span>
+      <span class="shop-stock-badge shop-stock-out" th:unless="${p.stockQuantity > 0}" th:text="#{shop.stock.out}"></span>
 
-    <div class="shop-next-batch" th:if="${nextBatchByProduct.get(p.id) != null}"
-         th:with="batch=${nextBatchByProduct.get(p.id)}">
-      <span th:text="'🗓 Следующая партия: ' + ${#temporals.format(batch.batchDate, 'dd.MM.yyyy')}"></span>
-      <span th:if="${batch.pickupLocation != null and !batch.pickupLocation.isEmpty()}" th:text="'📍 ' + ${batch.pickupLocation}"></span>
-      <span th:if="${batch.pickupWindow != null and !batch.pickupWindow.isEmpty()}" th:text="'🕒 ' + ${batch.pickupWindow}"></span>
+      <div class="shop-qty-row">
+        <button type="button" class="shop-qty-btn shop-qty-minus" th:attr="aria-label=#{shop.qty.less}">−</button>
+        <span class="shop-qty-value">0</span>
+        <button type="button" class="shop-qty-btn shop-qty-plus" th:attr="aria-label=#{shop.qty.more}">+</button>
+      </div>
     </div>
   </div>
 
-  <div th:if="${!#lists.isEmpty(onDemandProducts)}" class="shop-section-label">🍽 Под заказ</div>
-  <div th:each="p : ${onDemandProducts}" class="shop-product-card shop-product-card-compact">
-    <div class="shop-product-top">
-      <div class="shop-product-name" th:text="${p.name} + ' ' + ${p.sizeLabel}"></div>
-      <div class="shop-product-price" th:text="'$' + ${#numbers.formatDecimal(p.basePrice, 1, 2)}"></div>
+  <div th:if="${!#lists.isEmpty(onDemandProducts)}" class="shop-section-label" th:text="#{shop.section.ondemand}"></div>
+  <div th:each="p : ${onDemandProducts}" class="shop-product-card shop-product-card-compact"
+       th:attr="data-product-id=${p.id},data-price=${p.basePrice},data-max=${maxQuantityOnDemand}">
+    <div class="shop-product-photo">
+      <img th:if="${p.imageUrl != null and !p.imageUrl.isEmpty()}" th:src="${p.imageUrl}" alt=""/>
+      <span th:unless="${p.imageUrl != null and !p.imageUrl.isEmpty()}" th:text="${iconByProduct.get(p.id)}"></span>
     </div>
-    <span class="shop-stock-badge shop-stock-ondemand"
-          th:text="${p.prepTimeLabel != null and !p.prepTimeLabel.isEmpty()} ? ('🔸 Под заказ · ⏱ ' + ${p.prepTimeLabel}) : '🔸 Под заказ'"></span>
+    <div class="shop-product-info">
+      <div class="shop-product-top">
+        <div class="shop-product-name" th:text="${p.name} + ' ' + ${p.sizeLabel}"></div>
+        <div class="shop-product-price" th:text="'$' + ${#numbers.formatDecimal(p.basePrice, 1, 2, 'POINT')}"></div>
+      </div>
+      <span class="shop-stock-badge shop-stock-ondemand">
+        <span th:text="#{shop.ondemand.badge}"></span>
+        <span th:if="${p.prepTimeLabel != null and !p.prepTimeLabel.isEmpty()}" th:text="'· ⏱ ' + ${p.prepTimeLabel}"></span>
+        <span th:unless="${p.prepTimeLabel != null and !p.prepTimeLabel.isEmpty()}">· ⏱ <span th:text="#{shop.ondemand.preptime.fallback}"></span></span>
+      </span>
+
+      <div class="shop-qty-row">
+        <button type="button" class="shop-qty-btn shop-qty-minus" th:attr="aria-label=#{shop.qty.less}">−</button>
+        <span class="shop-qty-value">0</span>
+        <button type="button" class="shop-qty-btn shop-qty-plus" th:attr="aria-label=#{shop.qty.more}">+</button>
+      </div>
+    </div>
   </div>
 
-  <div th:if="${#lists.isEmpty(allProducts)}" class="shop-product-card">
-    Пока нет доступных товаров — загляните позже.
-  </div>
+  <div th:if="${#lists.isEmpty(allProducts)}" class="shop-product-card" th:text="#{shop.empty}"></div>
 
-  <div class="shop-reserve" th:if="${!#lists.isEmpty(allProducts)}">
-    <h2>Забронировать</h2>
-    <p class="hint">Мы свяжемся с вами, чтобы подтвердить заказ и самовывоз.</p>
+  <div class="shop-reserve" id="shop-checkout" th:if="${!#lists.isEmpty(allProducts)}">
+    <h2 th:text="#{shop.checkout.title}"></h2>
+    <p class="hint" th:text="#{shop.checkout.hint}"></p>
 
-    <form th:action="@{/shop/reserve}" method="post">
+    <form id="shop-form" th:action="@{/shop/reserve}" method="post">
       <!-- Honeypot: invisible to real visitors, but basic bots that auto-fill every field will
            trip it. Left completely empty by a human, so a non-empty value means "not human". -->
       <div style="position:absolute; left:-9999px; top:-9999px;" aria-hidden="true">
@@ -66,99 +91,150 @@
         <input type="text" id="shop-website" name="website" tabindex="-1" autocomplete="off"/>
       </div>
 
+      <div id="cart-lines"></div>
+
       <div class="mb-3">
-        <label class="form-label" for="shop-name">Ваше имя</label>
-        <input type="text" id="shop-name" name="name" class="form-control" required autofocus/>
+        <label class="form-label" for="shop-name" th:text="#{shop.name.label}"></label>
+        <input type="text" id="shop-name" name="name" class="form-control" required/>
       </div>
       <div class="mb-3">
-        <label class="form-label" for="shop-phone">Телефон</label>
+        <label class="form-label" for="shop-phone" th:text="#{shop.phone.label}"></label>
         <input type="tel" id="shop-phone" name="phone" class="form-control" placeholder="+1 555 123 4567" required/>
       </div>
-      <div class="mb-3" th:if="${allProducts.size() > 1}">
-        <label class="form-label" for="shop-product">Товар</label>
-        <select id="shop-product" name="productId" class="form-select" required>
-          <option th:each="p : ${allProducts}" th:value="${p.id}"
-                  th:attr="data-max=${p.active} ? ${maxQuantity} : ${maxQuantityOnDemand}"
-                  th:text="${p.active} ? (${p.name} + ' ' + ${p.sizeLabel}) : (${p.name} + ' ' + ${p.sizeLabel} + ' (под заказ)')"></option>
-        </select>
-      </div>
-      <input th:if="${allProducts.size() == 1}" type="hidden" name="productId" th:value="${allProducts[0].id}"/>
 
       <div class="mb-3">
-        <label class="form-label" for="qty-input">Количество банок</label>
-        <div class="qty-stepper">
-          <button type="button" id="qty-minus" aria-label="Меньше">−</button>
-          <input type="number" name="quantity" id="qty-input" value="1" min="1"
-                 th:max="${allProducts.size() == 1 and !allProducts[0].active} ? ${maxQuantityOnDemand} : ${maxQuantity}" readonly/>
-          <button type="button" id="qty-plus" aria-label="Больше">+</button>
-        </div>
-        <div class="qty-cap" id="qty-cap-hint"></div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Когда сможете подъехать?</label>
+        <label class="form-label" th:text="#{shop.when.label}"></label>
         <div class="row g-2">
           <div class="col-7">
-            <label class="visually-hidden" for="shop-date">Дата</label>
+            <label class="visually-hidden" for="shop-date">Date</label>
             <input type="date" id="shop-date" name="preferredDate" class="form-control"/>
           </div>
           <div class="col-5">
-            <label class="visually-hidden" for="shop-time">Время</label>
+            <label class="visually-hidden" for="shop-time">Time</label>
             <input type="time" id="shop-time" name="preferredTime" class="form-control"/>
           </div>
         </div>
-        <div class="qty-cap">необязательно, но поможет нам подготовиться</div>
+        <div class="qty-cap" th:text="#{shop.when.hint}"></div>
       </div>
 
       <div class="mb-3">
-        <label class="form-label" for="shop-notes">Комментарий</label>
-        <textarea id="shop-notes" name="notes" class="form-control" placeholder="необязательно"></textarea>
+        <label class="form-label" for="shop-notes" th:text="#{shop.notes.label}"></label>
+        <textarea id="shop-notes" name="notes" class="form-control" th:placeholder="#{shop.notes.placeholder}"></textarea>
       </div>
 
-      <button type="submit" class="shop-submit">Забронировать</button>
+      <div id="cart-summary-bar" class="shop-cart-summary">
+        <span id="cart-count-label" th:text="#{shop.cart.count.prefix}"></span>
+        <span id="cart-count-value">0</span>
+        <span id="cart-total-label" th:text="#{shop.cart.total.prefix}"></span>
+        <span id="cart-total-value">$0.00</span>
+      </div>
+      <div id="cart-empty-hint" class="qty-cap" th:text="#{shop.checkout.empty.hint}"></div>
+
+      <button type="submit" id="shop-submit-btn" class="shop-submit" disabled th:text="#{shop.submit}"></button>
     </form>
   </div>
 
   <div class="shop-footer">🥬 homefood</div>
 </div>
 
+<div id="cart-bar" class="shop-cart-bar">
+  <span id="cart-bar-text"></span>
+  <button type="button" id="cart-bar-btn" th:text="#{shop.cart.checkout}"></button>
+</div>
+
 <script th:inline="javascript">
-  var qtyInput = document.getElementById('qty-input');
-  var qtyCapHint = document.getElementById('qty-cap-hint');
-  var productSelect = document.getElementById('shop-product');
+  var countPrefix = /*[[#{shop.cart.count.prefix}]]*/ 'In cart:';
+  var totalPrefix = /*[[#{shop.cart.total.prefix}]]*/ 'Total:';
 
-  function currentMaxQty() {
-    return parseInt(qtyInput.getAttribute('max'), 10) || 10;
+  // Mirrors OrderPricing.calculateTotal server-side: jar 1 full price, jars 2-3 discounted
+  // $1 each, jar 4+ back to full price.
+  function calculateTotal(basePrice, quantity) {
+    var total = 0;
+    for (var jarIndex = 1; jarIndex <= quantity; jarIndex++) {
+      total += (jarIndex === 2 || jarIndex === 3) ? (basePrice - 1) : basePrice;
+    }
+    return total;
   }
 
-  function refreshQtyCapHint() {
-    qtyCapHint.textContent = 'до ' + currentMaxQty() + ' банок за раз';
-  }
+  var cards = document.querySelectorAll('.shop-product-card[data-product-id]');
+  var cartBar = document.getElementById('cart-bar');
+  var cartBarText = document.getElementById('cart-bar-text');
+  var cartCountValue = document.getElementById('cart-count-value');
+  var cartTotalValue = document.getElementById('cart-total-value');
+  var cartEmptyHint = document.getElementById('cart-empty-hint');
+  var cartSummaryBar = document.getElementById('cart-summary-bar');
+  var submitBtn = document.getElementById('shop-submit-btn');
+  var cartLinesContainer = document.getElementById('cart-lines');
+  var shopForm = document.getElementById('shop-form');
 
-  // Made-to-order items have a higher cap than in-stock items (physical jars on hand) - when the
-  // customer picks a different product, the max quantity - and the current value if it now
-  // exceeds it - update to match.
-  if (productSelect) {
-    productSelect.addEventListener('change', function () {
-      var option = productSelect.options[productSelect.selectedIndex];
-      var max = option ? parseInt(option.getAttribute('data-max'), 10) : 10;
-      qtyInput.setAttribute('max', max);
-      if (parseInt(qtyInput.value, 10) > max) {
-        qtyInput.value = max;
+  function refreshCart() {
+    var itemCount = 0;
+    var total = 0;
+    cards.forEach(function (card) {
+      var qty = parseInt(card.querySelector('.shop-qty-value').textContent, 10) || 0;
+      if (qty > 0) {
+        itemCount += 1;
+        total += calculateTotal(parseFloat(card.getAttribute('data-price')), qty);
       }
-      refreshQtyCapHint();
     });
-    productSelect.dispatchEvent(new Event('change'));
-  } else {
-    refreshQtyCapHint();
+
+    cartCountValue.textContent = itemCount;
+    cartTotalValue.textContent = '$' + total.toFixed(2);
+    cartBarText.textContent = countPrefix + ' ' + itemCount + ' · ' + totalPrefix + ' $' + total.toFixed(2);
+
+    var hasItems = itemCount > 0;
+    cartBar.classList.toggle('shop-cart-bar-visible', hasItems);
+    cartSummaryBar.style.display = hasItems ? '' : 'none';
+    cartEmptyHint.style.display = hasItems ? 'none' : '';
+    submitBtn.disabled = !hasItems;
   }
 
-  document.getElementById('qty-minus').addEventListener('click', function () {
-    qtyInput.value = Math.max(1, parseInt(qtyInput.value, 10) - 1);
+  cards.forEach(function (card) {
+    var max = parseInt(card.getAttribute('data-max'), 10) || 10;
+    var valueEl = card.querySelector('.shop-qty-value');
+    var minusBtn = card.querySelector('.shop-qty-minus');
+    var plusBtn = card.querySelector('.shop-qty-plus');
+
+    minusBtn.addEventListener('click', function () {
+      var qty = parseInt(valueEl.textContent, 10) || 0;
+      qty = Math.max(0, qty - 1);
+      valueEl.textContent = qty;
+      card.classList.toggle('shop-product-card-in-cart', qty > 0);
+      refreshCart();
+    });
+    plusBtn.addEventListener('click', function () {
+      var qty = parseInt(valueEl.textContent, 10) || 0;
+      qty = Math.min(max, qty + 1);
+      valueEl.textContent = qty;
+      card.classList.toggle('shop-product-card-in-cart', qty > 0);
+      refreshCart();
+    });
   });
-  document.getElementById('qty-plus').addEventListener('click', function () {
-    qtyInput.value = Math.min(currentMaxQty(), parseInt(qtyInput.value, 10) + 1);
+
+  document.getElementById('cart-bar-btn').addEventListener('click', function () {
+    document.getElementById('shop-checkout').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
+
+  shopForm.addEventListener('submit', function () {
+    cards.forEach(function (card) {
+      var qty = parseInt(card.querySelector('.shop-qty-value').textContent, 10) || 0;
+      if (qty > 0) {
+        var productIdInput = document.createElement('input');
+        productIdInput.type = 'hidden';
+        productIdInput.name = 'productId';
+        productIdInput.value = card.getAttribute('data-product-id');
+        cartLinesContainer.appendChild(productIdInput);
+
+        var quantityInput = document.createElement('input');
+        quantityInput.type = 'hidden';
+        quantityInput.name = 'quantity';
+        quantityInput.value = qty;
+        cartLinesContainer.appendChild(quantityInput);
+      }
+    });
+  });
+
+  refreshCart();
 </script>
 </body>
 </html>

@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.web.csrf.CsrfFilter;
 
 /**
  * Single shared admin login for V1 — one account, credentials from env
@@ -21,7 +22,8 @@ import org.springframework.security.web.context.SecurityContextHolderFilter;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, SlidingSessionCookieFilter slidingSessionCookieFilter) throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http, SlidingSessionCookieFilter slidingSessionCookieFilter,
+                                     CsrfTokenEagerLoadingFilter csrfTokenEagerLoadingFilter) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/actuator/health", "/css/**", "/shop", "/shop/**").permitAll()
@@ -36,7 +38,10 @@ public class SecurityConfig {
                         .permitAll())
                 // Refreshes the session cookie's Max-Age on every authenticated request so a
                 // returning visit within 24h extends the login by another 24h (see class javadoc).
-                .addFilterAfter(slidingSessionCookieFilter, SecurityContextHolderFilter.class);
+                .addFilterAfter(slidingSessionCookieFilter, SecurityContextHolderFilter.class)
+                // See CsrfTokenEagerLoadingFilter javadoc - avoids "response already committed"
+                // on long pages (the public shop) if left at Spring Security's default lazy resolution.
+                .addFilterAfter(csrfTokenEagerLoadingFilter, CsrfFilter.class);
         return http.build();
     }
 
