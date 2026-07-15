@@ -42,4 +42,10 @@ public class Product {
     @NotNull(message = "Укажите остаток")
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity = 0;
+
+    /** Free-text approximate prep time shown on the public shop for made-to-order items,
+     * e.g. "~2 часа" or "1-2 дня" - not a structured duration since it's always a rough estimate. */
+    @Size(max = 255, message = "Слишком длинный текст")
+    @Column(name = "prep_time_label")
+    private String prepTimeLabel;
 }

@@ -388,6 +388,18 @@ body.shop-body {
 }
 .shop-stock-in { background: #d1f0da; color: #14532d; }
 .shop-stock-out { background: #f1f3f5; color: #6c757d; }
+.shop-stock-ondemand { background: #fff3cd; color: #7a5c00; }
+
+/* Made-to-order section: lighter card, no stock/next-batch block, so it stays compact. */
+.shop-section-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #868e96;
+  margin: 18px 2px 8px;
+}
+.shop-product-card-compact { padding: 14px 20px; margin-bottom: 10px; }
 .shop-next-batch {
   margin-top: 10px;
   padding-top: 10px;
