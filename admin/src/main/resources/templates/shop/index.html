@@ -21,10 +21,10 @@
     ✅ Заявка отправлена! Мы свяжемся с вами по телефону, чтобы подтвердить заказ.
   </div>
   <div th:if="${error}" class="shop-alert shop-alert-error">
-    ⚠️ Проверьте имя, телефон и количество (от 1 до <span th:text="${maxQuantity}"></span> банок) и попробуйте ещё раз.
+    ⚠️ Проверьте имя, телефон и количество и попробуйте ещё раз.
   </div>
 
-  <div th:each="p : ${products}" class="shop-product-card">
+  <div th:each="p : ${availableProducts}" class="shop-product-card">
     <div class="shop-product-top">
       <div class="shop-product-name" th:text="${p.name} + ' ' + ${p.sizeLabel}"></div>
       <div class="shop-product-price" th:text="'$' + ${#numbers.formatDecimal(p.basePrice, 1, 2)}"></div>
@@ -40,11 +40,21 @@
     </div>
   </div>
 
-  <div th:if="${#lists.isEmpty(products)}" class="shop-product-card">
+  <div th:if="${!#lists.isEmpty(onDemandProducts)}" class="shop-section-label">🍽 Под заказ</div>
+  <div th:each="p : ${onDemandProducts}" class="shop-product-card shop-product-card-compact">
+    <div class="shop-product-top">
+      <div class="shop-product-name" th:text="${p.name} + ' ' + ${p.sizeLabel}"></div>
+      <div class="shop-product-price" th:text="'$' + ${#numbers.formatDecimal(p.basePrice, 1, 2)}"></div>
+    </div>
+    <span class="shop-stock-badge shop-stock-ondemand"
+          th:text="${p.prepTimeLabel != null and !p.prepTimeLabel.isEmpty()} ? ('🔸 Под заказ · ⏱ ' + ${p.prepTimeLabel}) : '🔸 Под заказ'"></span>
+  </div>
+
+  <div th:if="${#lists.isEmpty(allProducts)}" class="shop-product-card">
     Пока нет доступных товаров — загляните позже.
   </div>
 
-  <div class="shop-reserve" th:if="${!#lists.isEmpty(products)}">
+  <div class="shop-reserve" th:if="${!#lists.isEmpty(allProducts)}">
     <h2>Забронировать</h2>
     <p class="hint">Мы свяжемся с вами, чтобы подтвердить заказ и самовывоз.</p>
 
@@ -64,22 +74,25 @@
         <label class="form-label" for="shop-phone">Телефон</label>
         <input type="tel" id="shop-phone" name="phone" class="form-control" placeholder="+1 555 123 4567" required/>
       </div>
-      <div class="mb-3" th:if="${products.size() > 1}">
+      <div class="mb-3" th:if="${allProducts.size() > 1}">
         <label class="form-label" for="shop-product">Товар</label>
         <select id="shop-product" name="productId" class="form-select" required>
-          <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name} + ' ' + ${p.sizeLabel}"></option>
+          <option th:each="p : ${allProducts}" th:value="${p.id}"
+                  th:attr="data-max=${p.active} ? ${maxQuantity} : ${maxQuantityOnDemand}"
+                  th:text="${p.active} ? (${p.name} + ' ' + ${p.sizeLabel}) : (${p.name} + ' ' + ${p.sizeLabel} + ' (под заказ)')"></option>
         </select>
       </div>
-      <input th:if="${products.size() == 1}" type="hidden" name="productId" th:value="${products[0].id}"/>
+      <input th:if="${allProducts.size() == 1}" type="hidden" name="productId" th:value="${allProducts[0].id}"/>
 
       <div class="mb-3">
         <label class="form-label" for="qty-input">Количество банок</label>
         <div class="qty-stepper">
           <button type="button" id="qty-minus" aria-label="Меньше">−</button>
-          <input type="number" name="quantity" id="qty-input" value="1" min="1" th:max="${maxQuantity}" readonly/>
+          <input type="number" name="quantity" id="qty-input" value="1" min="1"
+                 th:max="${allProducts.size() == 1 and !allProducts[0].active} ? ${maxQuantityOnDemand} : ${maxQuantity}" readonly/>
           <button type="button" id="qty-plus" aria-label="Больше">+</button>
         </div>
-        <div class="qty-cap" th:text="'до ' + ${maxQuantity} + ' банок за раз'"></div>
+        <div class="qty-cap" id="qty-cap-hint"></div>
       </div>
 
       <div class="mb-3">
@@ -110,13 +123,41 @@
 </div>
 
 <script th:inline="javascript">
-  var maxQty = /*[[${maxQuantity}]]*/ 10;
   var qtyInput = document.getElementById('qty-input');
+  var qtyCapHint = document.getElementById('qty-cap-hint');
+  var productSelect = document.getElementById('shop-product');
+
+  function currentMaxQty() {
+    return parseInt(qtyInput.getAttribute('max'), 10) || 10;
+  }
+
+  function refreshQtyCapHint() {
+    qtyCapHint.textContent = 'до ' + currentMaxQty() + ' банок за раз';
+  }
+
+  // Made-to-order items have a higher cap than in-stock items (physical jars on hand) - when the
+  // customer picks a different product, the max quantity - and the current value if it now
+  // exceeds it - update to match.
+  if (productSelect) {
+    productSelect.addEventListener('change', function () {
+      var option = productSelect.options[productSelect.selectedIndex];
+      var max = option ? parseInt(option.getAttribute('data-max'), 10) : 10;
+      qtyInput.setAttribute('max', max);
+      if (parseInt(qtyInput.value, 10) > max) {
+        qtyInput.value = max;
+      }
+      refreshQtyCapHint();
+    });
+    productSelect.dispatchEvent(new Event('change'));
+  } else {
+    refreshQtyCapHint();
+  }
+
   document.getElementById('qty-minus').addEventListener('click', function () {
     qtyInput.value = Math.max(1, parseInt(qtyInput.value, 10) - 1);
   });
   document.getElementById('qty-plus').addEventListener('click', function () {
-    qtyInput.value = Math.min(maxQty, parseInt(qtyInput.value, 10) + 1);
+    qtyInput.value = Math.min(currentMaxQty(), parseInt(qtyInput.value, 10) + 1);
   });
 </script>
 </body>

@@ -30,6 +30,7 @@ import java.util.Map;
 public class PublicShopController {
 
     private static final int MAX_RESERVATION_QUANTITY = 10;
+    private static final int MAX_ON_DEMAND_QUANTITY = 20;
     private static final int MAX_RESERVATIONS_PER_PHONE_PER_HOUR = 3;
     private static final int MAX_NAME_LENGTH = 255;
     private static final int MAX_PHONE_LENGTH = 50;
@@ -44,18 +45,23 @@ public class PublicShopController {
     public String shop(@RequestParam(required = false) String reserved,
                         @RequestParam(required = false) String error,
                         Model model) {
-        List<Product> products = productRepository.findAllByOrderByNameAsc().stream()
-                .filter(Product::isActive)
-                .toList();
+        List<Product> allProducts = productRepository.findAllByOrderByNameAsc();
+        List<Product> availableProducts = allProducts.stream().filter(Product::isActive).toList();
+        // Inactive products are "made to order" - not in stock, but still orderable: the business
+        // confirms feasibility/timing by phone before committing (see OrderStatus.REQUESTED).
+        List<Product> onDemandProducts = allProducts.stream().filter(p -> !p.isActive()).toList();
 
         Map<Long, ProductionBatch> nextBatchByProduct = new HashMap<>();
         for (ProductionBatch batch : productionBatchRepository.findByStatusOrderByBatchDateAsc(BatchStatus.PLANNED)) {
             nextBatchByProduct.putIfAbsent(batch.getProduct().getId(), batch);
         }
 
-        model.addAttribute("products", products);
+        model.addAttribute("allProducts", allProducts);
+        model.addAttribute("availableProducts", availableProducts);
+        model.addAttribute("onDemandProducts", onDemandProducts);
         model.addAttribute("nextBatchByProduct", nextBatchByProduct);
         model.addAttribute("maxQuantity", MAX_RESERVATION_QUANTITY);
+        model.addAttribute("maxQuantityOnDemand", MAX_ON_DEMAND_QUANTITY);
         model.addAttribute("reserved", reserved != null);
         model.addAttribute("error", error);
         return "shop/index";
@@ -79,11 +85,17 @@ public class PublicShopController {
         if (name == null || name.isBlank() || name.length() > MAX_NAME_LENGTH
                 || phone == null || phone.isBlank() || phone.length() > MAX_PHONE_LENGTH
                 || (notes != null && notes.length() > MAX_NOTES_LENGTH)
-                || quantity == null || quantity < 1 || quantity > MAX_RESERVATION_QUANTITY) {
+                || quantity == null || quantity < 1) {
             return "redirect:/shop?error=1";
         }
         Product product = productRepository.findById(productId).orElse(null);
-        if (product == null || !product.isActive()) {
+        if (product == null) {
+            return "redirect:/shop?error=1";
+        }
+        // Active/in-stock items are capped tighter (physical jars on hand); inactive items are
+        // made-to-order and confirmed by phone anyway, so a higher cap is fine.
+        int maxForProduct = product.isActive() ? MAX_RESERVATION_QUANTITY : MAX_ON_DEMAND_QUANTITY;
+        if (quantity > maxForProduct) {
             return "redirect:/shop?error=1";
         }
 

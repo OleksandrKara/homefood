@@ -32,6 +32,13 @@
     <input type="checkbox" th:field="*{active}" class="form-check-input" style="width:22px;height:22px;"/>
     <label class="form-check-label ms-2" for="active">Активен (показывать в заказах)</label>
   </div>
+  <div class="mb-3">
+    <label class="form-label" for="prepTimeLabel">Время приготовления (для публичной страницы)</label>
+    <input type="text" th:field="*{prepTimeLabel}" class="form-control" placeholder="~2 часа / 1-2 дня"/>
+    <div style="font-size:0.85rem; color:#868e96; margin-top:6px;">
+      Показывается клиентам на публичной странице для неактивных товаров ("под заказ").
+    </div>
+  </div>
 
   <div class="sticky-save-bar">
     <a th:href="@{/products}" class="btn btn-outline-secondary">Отмена</a>
