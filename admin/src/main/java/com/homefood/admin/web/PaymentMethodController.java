@@ -4,10 +4,14 @@ import com.homefood.admin.entity.PaymentMethod;
 import com.homefood.admin.repository.PaymentMethodRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @Controller
 @RequestMapping("/payment-methods")
@@ -59,5 +63,29 @@ public class PaymentMethodController {
     public String delete(@PathVariable Long id) {
         paymentMethodRepository.deleteById(id);
         return "redirect:/payment-methods";
+    }
+
+    /**
+     * Add a payment method from a modal on another page (e.g. the order form) without navigating
+     * away. Reuses an existing method with the same name (case-insensitively) instead of erroring
+     * on the unique constraint.
+     */
+    @PostMapping(value = "/quick", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> quickCreate(@RequestParam String name) {
+        String trimmed = name == null ? "" : name.trim();
+        if (trimmed.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Укажите название"));
+        }
+        if (trimmed.length() > 255) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Слишком длинное название"));
+        }
+        PaymentMethod paymentMethod = paymentMethodRepository.findByNameIgnoreCase(trimmed)
+                .orElseGet(() -> {
+                    PaymentMethod pm = new PaymentMethod();
+                    pm.setName(trimmed);
+                    return paymentMethodRepository.save(pm);
+                });
+        return ResponseEntity.ok(Map.of("id", paymentMethod.getId(), "name", paymentMethod.getName()));
     }
 }
