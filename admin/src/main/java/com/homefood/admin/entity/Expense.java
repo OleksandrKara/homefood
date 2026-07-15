@@ -44,12 +44,6 @@ public class Expense {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate expenseDate = LocalDate.now();
 
-    @ManyToOne
-    @JoinColumn(name = "ingredient_id")
-    private Ingredient ingredient;
-
-    private BigDecimal quantity;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 }

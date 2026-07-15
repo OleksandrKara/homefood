@@ -39,19 +39,31 @@
   </div>
 
   <div id="ingredient-fields">
-    <div class="mb-3">
-      <label class="form-label" for="ingredientId">Сырьё (пополнит склад)</label>
-      <select id="ingredientId" name="ingredientId" class="form-select">
-        <option value="">— не связано со складом —</option>
-        <option th:each="i : ${ingredients}" th:value="${i.id}" th:text="${i.name} + ' (' + ${i.unit} + ')'"
-                th:selected="${expense.ingredient != null and expense.ingredient.id == i.id}"></option>
-      </select>
-      <a th:href="@{/ingredients/new}" target="_blank" class="d-inline-block mt-2" style="font-size:0.9rem;">+ Новое сырьё (в новой вкладке)</a>
+    <label class="form-label">Сырьё (пополнит склад)</label>
+    <div id="ingredient-rows">
+      <div class="recipe-row" th:each="r : ${rows}" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+        <select name="ingredientId" class="form-select" style="flex:2;">
+          <option value="">— сырьё —</option>
+          <option th:each="i : ${ingredients}" th:value="${i.id}" th:text="${i.name} + ' (' + ${i.unit} + ')'"
+                  th:selected="${r.ingredient.id == i.id}"></option>
+        </select>
+        <input type="number" name="quantity" step="0.01" min="0.01" th:value="${r.quantity}"
+               class="form-control" placeholder="кол-во" style="flex:1;"/>
+        <button type="button" class="btn btn-outline-secondary remove-row" aria-label="Удалить строку" style="min-height:48px;">✕</button>
+      </div>
+
+      <div class="recipe-row" th:if="${#lists.isEmpty(rows)}" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+        <select name="ingredientId" class="form-select" style="flex:2;">
+          <option value="">— сырьё —</option>
+          <option th:each="i : ${ingredients}" th:value="${i.id}" th:text="${i.name} + ' (' + ${i.unit} + ')'"></option>
+        </select>
+        <input type="number" name="quantity" step="0.01" min="0.01" class="form-control" placeholder="кол-во" style="flex:1;"/>
+        <button type="button" class="btn btn-outline-secondary remove-row" aria-label="Удалить строку" style="min-height:48px;">✕</button>
+      </div>
     </div>
-    <div class="mb-3">
-      <label class="form-label" for="quantity">Купленное количество</label>
-      <input type="number" step="0.01" min="0" th:field="*{quantity}" class="form-control" placeholder="напр. 10"/>
-    </div>
+
+    <button type="button" id="add-ingredient-row" class="btn btn-outline-dark w-100 mb-3">+ Добавить сырьё</button>
+    <a th:href="@{/ingredients/new}" target="_blank" class="d-inline-block mb-3" style="font-size:0.9rem;">+ Новое сырьё (в новой вкладке)</a>
   </div>
 
   <div class="sticky-save-bar">
@@ -65,6 +77,17 @@
           onclick="return confirm('Удалить расход? Если он был связан со складом, остаток сырья скорректируется обратно.');">Удалить</button>
 </form>
 
+<template id="empty-ingredient-row-template">
+  <div class="recipe-row" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+    <select name="ingredientId" class="form-select" style="flex:2;">
+      <option value="">— сырьё —</option>
+      <option th:each="i : ${ingredients}" th:value="${i.id}" th:text="${i.name} + ' (' + ${i.unit} + ')'"></option>
+    </select>
+    <input type="number" name="quantity" step="0.01" min="0.01" class="form-control" placeholder="кол-во" style="flex:1;"/>
+    <button type="button" class="btn btn-outline-secondary remove-row" aria-label="Удалить строку" style="min-height:48px;">✕</button>
+  </div>
+</template>
+
 <script>
   function toggleIngredientFields() {
     var checked = document.querySelector('input[name="category"]:checked');
@@ -75,6 +98,29 @@
     el.addEventListener('change', toggleIngredientFields);
   });
   toggleIngredientFields();
+
+  var ingredientRowsContainer = document.getElementById('ingredient-rows');
+
+  function wireRemoveButton(row) {
+    var btn = row.querySelector('.remove-row');
+    btn.addEventListener('click', function () {
+      if (ingredientRowsContainer.children.length > 1) {
+        row.remove();
+      } else {
+        row.querySelector('select').value = '';
+        row.querySelector('input').value = '';
+      }
+    });
+  }
+
+  ingredientRowsContainer.querySelectorAll('.recipe-row').forEach(wireRemoveButton);
+
+  document.getElementById('add-ingredient-row').addEventListener('click', function () {
+    var template = document.getElementById('empty-ingredient-row-template');
+    var clone = template.content.cloneNode(true);
+    ingredientRowsContainer.appendChild(clone);
+    wireRemoveButton(ingredientRowsContainer.lastElementChild);
+  });
 </script>
 </body>
 </html>

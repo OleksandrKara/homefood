@@ -37,8 +37,8 @@
     <div class="subtitle" th:text="${e.description}"></div>
     <div class="meta">
       <span th:text="'$' + ${#numbers.formatDecimal(e.amount, 1, 2)}"></span>
-      <span th:if="${e.ingredient != null and e.quantity != null}"
-            th:text="${#numbers.formatDecimal(e.quantity, 1, 2)} + ' ' + ${e.ingredient.unit} + ' ' + ${e.ingredient.name}"></span>
+      <span th:each="ei : ${ingredientsByExpense.get(e.id)}"
+            th:text="${#numbers.formatDecimal(ei.quantity, 1, 2)} + ' ' + ${ei.ingredient.unit} + ' ' + ${ei.ingredient.name}"></span>
     </div>
   </a>
 
