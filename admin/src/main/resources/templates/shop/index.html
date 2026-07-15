@@ -100,6 +100,7 @@
       <div class="mb-3">
         <label class="form-label" for="shop-phone" th:text="#{shop.phone.label}"></label>
         <input type="tel" id="shop-phone" name="phone" class="form-control" placeholder="+1 555 123 4567" required/>
+        <div id="returning-customer-msg" class="shop-welcome-back" style="display:none;"></div>
       </div>
 
       <div class="mb-3">
@@ -238,6 +239,42 @@
   });
 
   refreshCart();
+
+  // Returning-customer greeting: async lookup by phone as soon as it looks complete enough,
+  // debounced so it doesn't fire on every keystroke. Never touches the name field - the lookup
+  // endpoint deliberately returns only a yes/no, not the stored name (see PublicShopController).
+  (function () {
+    var phoneInput = document.getElementById('shop-phone');
+    var welcomeMsg = document.getElementById('returning-customer-msg');
+    var welcomeText = /*[[#{shop.welcome.back}]]*/ 'Welcome back!';
+    var lookupUrl = /*[[@{/shop/client-lookup}]]*/ '/admin/shop/client-lookup';
+    var debounceTimer = null;
+
+    function checkReturningCustomer() {
+      var digits = phoneInput.value.replace(/[^0-9]/g, '');
+      if (digits.length < 10) {
+        welcomeMsg.style.display = 'none';
+        return;
+      }
+      fetch(lookupUrl + '?phone=' + encodeURIComponent(phoneInput.value))
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (data) {
+          if (data && data.found) {
+            welcomeMsg.textContent = welcomeText;
+            welcomeMsg.style.display = '';
+          } else {
+            welcomeMsg.style.display = 'none';
+          }
+        })
+        .catch(function () { /* non-critical enhancement - fail silently */ });
+    }
+
+    phoneInput.addEventListener('input', function () {
+      welcomeMsg.style.display = 'none';
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(checkReturningCustomer, 500);
+    });
+  })();
 </script>
 </body>
 </html>
