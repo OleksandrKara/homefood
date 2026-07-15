@@ -20,12 +20,12 @@
             th:text="${o.status.name() == 'REQUESTED' ? '🔔 Заявка' : (o.status.name() == 'NEW' ? 'Новый' : (o.status.name() == 'DONE' ? 'Готово' : 'Отменён'))}"></span>
     </div>
     <div class="subtitle" th:text="${o.client.name}"></div>
-    <div class="subtitle" th:text="${o.product.name} + ' ' + ${o.product.sizeLabel} + ' · ' + ${o.quantity} + ' шт' + (${o.totalPrice} != null ? ' · $' + ${#numbers.formatDecimal(o.totalPrice, 1, 2)} : '')"></div>
+    <div class="subtitle" th:text="${o.product.name} + ' ' + ${o.product.sizeLabel} + ' · ' + ${o.quantity} + ' шт' + (${o.totalPrice} != null ? ' · $' + ${#numbers.formatDecimal(o.totalPrice, 1, 2, 'POINT')} : '')"></div>
     <div class="meta">
       <span th:text="${o.deliveryType.name() == 'PICKUP'} ? '🏠 Самовывоз' : '🚚 Доставка'"></span>
       <span th:if="${o.deliveryType.name() == 'DELIVERY' and o.district != null and !o.district.isEmpty()}" th:text="${o.district}"></span>
       <span th:if="${o.paymentMethod != null and !o.paymentMethod.isEmpty()}" th:text="'💳 ' + ${o.paymentMethod}"></span>
-      <span th:if="${o.tipAmount != null and o.tipAmount.signum() > 0}" th:text="'💵 +$' + ${#numbers.formatDecimal(o.tipAmount, 1, 2)} + ' чай'"></span>
+      <span th:if="${o.tipAmount != null and o.tipAmount.signum() > 0}" th:text="'💵 +$' + ${#numbers.formatDecimal(o.tipAmount, 1, 2, 'POINT')} + ' чай'"></span>
     </div>
     <div class="meta" th:if="${o.notes != null and !o.notes.isEmpty()}">
       <span>📝 <span th:text="${o.notes}"></span></span>

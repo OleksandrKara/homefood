@@ -48,4 +48,17 @@ public class Product {
     @Size(max = 255, message = "Слишком длинный текст")
     @Column(name = "prep_time_label")
     private String prepTimeLabel;
+
+    /** Optional photo URL for the public shop card. Falls back to an emoji icon when blank -
+     * see shop/index.html - since there's no legitimate way to auto-source real photos of a
+     * specific home cook's dishes. */
+    @Size(max = 500, message = "Слишком длинная ссылка")
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    /** Jars #2-3 discounted $1 each when enabled (see OrderPricing) - kept for Квашеная капуста
+     * only; every other product uses flat price x quantity, since the discount doesn't make
+     * sense for count/weight-based items like a cake or a bag of dumplings. */
+    @Column(name = "tiered_discount_enabled", nullable = false)
+    private boolean tieredDiscountEnabled = false;
 }

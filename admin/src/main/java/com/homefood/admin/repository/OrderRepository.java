@@ -36,6 +36,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT DISTINCT o.deliveryAddress FROM Order o WHERE o.deliveryAddress IS NOT NULL AND o.deliveryAddress <> ''")
     List<String> findDistinctDeliveryAddresses();
 
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.client.phone = :phone AND o.createdAt >= :since")
+    /**
+     * Counts distinct checkout submissions, not order rows: a single public-shop checkout can
+     * create several Order rows at once (one per cart line, all sharing one explicitly-assigned
+     * createdAt - see PublicShopController.reserve). Counting raw rows would let one legitimate
+     * multi-item order alone exhaust the per-phone rate limit for the next hour.
+     */
+    @Query("SELECT COUNT(DISTINCT o.createdAt) FROM Order o WHERE o.client.phone = :phone AND o.createdAt >= :since")
     long countByClientPhoneSince(String phone, Instant since);
 }

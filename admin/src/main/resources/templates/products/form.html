@@ -32,11 +32,25 @@
     <input type="checkbox" th:field="*{active}" class="form-check-input" style="width:22px;height:22px;"/>
     <label class="form-check-label ms-2" for="active">Активен (показывать в заказах)</label>
   </div>
+  <div class="mb-3 form-check">
+    <input type="checkbox" th:field="*{tieredDiscountEnabled}" class="form-check-input" style="width:22px;height:22px;"/>
+    <label class="form-check-label ms-2" for="tieredDiscountEnabled">Скидка $1 на 2-ю и 3-ю банку</label>
+    <div style="font-size:0.85rem; color:#868e96; margin-top:6px;">
+      Только для товаров, где цена за штуку и клиенты берут помногу (как капуста). Для остальных — обычная цена × количество.
+    </div>
+  </div>
   <div class="mb-3">
     <label class="form-label" for="prepTimeLabel">Время приготовления (для публичной страницы)</label>
     <input type="text" th:field="*{prepTimeLabel}" class="form-control" placeholder="~2 часа / 1-2 дня"/>
     <div style="font-size:0.85rem; color:#868e96; margin-top:6px;">
       Показывается клиентам на публичной странице для неактивных товаров ("под заказ").
+    </div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="imageUrl">Фото (ссылка, для публичной страницы)</label>
+    <input type="text" th:field="*{imageUrl}" class="form-control" placeholder="https://..."/>
+    <div style="font-size:0.85rem; color:#868e96; margin-top:6px;">
+      Необязательно. Пока не заполнено — на публичной странице показывается иконка вместо фото.
     </div>
   </div>
 

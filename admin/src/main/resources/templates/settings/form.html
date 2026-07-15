@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Настройки магазина')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title='Настройки магазина')}"></div>
+
+<form th:action="@{/settings}" th:object="${settings}" method="post" class="form-page">
+  <div th:if="${#fields.hasErrors('*')}" class="form-error-banner">
+    <div th:each="err : ${#fields.errors('*')}" th:text="${err}"></div>
+  </div>
+  <div th:if="${param.saved != null}" class="shop-alert shop-alert-success" style="margin-bottom:16px;">
+    ✅ Сохранено
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="pickupAddress">Адрес самовывоза</label>
+    <input type="text" th:field="*{pickupAddress}" class="form-control" placeholder="напр. 123 Main St, San Diego, CA"/>
+    <div style="font-size:0.85rem; color:#868e96; margin-top:6px;">
+      Один адрес для всех товаров — показывается один раз на публичной странице, кликабелен (открывает карту).
+    </div>
+  </div>
+
+  <div class="sticky-save-bar">
+    <a th:href="@{/orders}" class="btn btn-outline-secondary">Отмена</a>
+    <button type="submit" class="btn btn-dark">Сохранить</button>
+  </div>
+</form>
+</body>
+</html>

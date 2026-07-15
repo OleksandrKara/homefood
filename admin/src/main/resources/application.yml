@@ -24,6 +24,14 @@ spring:
   thymeleaf:
     cache: false
 
+  # Without this, Spring's default MessageSource behavior can prefer the *container's* system
+  # locale (en_US here) over the neutral messages.properties bundle for locales that don't have
+  # their own file (ru falls back to the root bundle, which is Russian) - causing the shop page to
+  # render in English even when Russian was explicitly resolved. See messages.properties (ru,
+  # default) / messages_en.properties.
+  messages:
+    fallback-to-system-locale: false
+
 app:
   admin:
     username: ${ADMIN_USERNAME:admin}

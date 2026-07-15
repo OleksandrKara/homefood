@@ -18,11 +18,11 @@
   <div class="item-card">
     <div class="row-top">
       <span class="subtitle">Инвестиции (всего)</span>
-      <span class="title" th:text="'$' + ${#numbers.formatDecimal(investmentTotal, 1, 2)}"></span>
+      <span class="title" th:text="'$' + ${#numbers.formatDecimal(investmentTotal, 1, 2, 'POINT')}"></span>
     </div>
     <div class="row-top">
       <span class="subtitle">Операционные (всего)</span>
-      <span class="title" th:text="'$' + ${#numbers.formatDecimal(operationalTotal, 1, 2)}"></span>
+      <span class="title" th:text="'$' + ${#numbers.formatDecimal(operationalTotal, 1, 2, 'POINT')}"></span>
     </div>
   </div>
 </div>
@@ -36,9 +36,9 @@
     </div>
     <div class="subtitle" th:text="${e.description}"></div>
     <div class="meta">
-      <span th:text="'$' + ${#numbers.formatDecimal(e.amount, 1, 2)}"></span>
+      <span th:text="'$' + ${#numbers.formatDecimal(e.amount, 1, 2, 'POINT')}"></span>
       <span th:each="ei : ${ingredientsByExpense.get(e.id)}"
-            th:text="${#numbers.formatDecimal(ei.quantity, 1, 2)} + ' ' + ${ei.ingredient.unit} + ' ' + ${ei.ingredient.name}"></span>
+            th:text="${#numbers.formatDecimal(ei.quantity, 1, 2, 'POINT')} + ' ' + ${ei.ingredient.unit} + ' ' + ${ei.ingredient.name}"></span>
     </div>
   </a>
 

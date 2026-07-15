@@ -8,7 +8,7 @@
   <a th:each="entry : ${groupedRecipes}" th:href="@{'/recipes/product/' + ${entry.key.id}}" class="item-card">
     <div class="title" th:text="${entry.key.name} + ' ' + ${entry.key.sizeLabel}"></div>
     <div class="subtitle" th:each="r : ${entry.value}"
-         th:text="${#numbers.formatDecimal(r.quantityPerUnit, 1, 2)} + ' ' + ${r.ingredient.unit} + ' ' + ${r.ingredient.name}"></div>
+         th:text="${#numbers.formatDecimal(r.quantityPerUnit, 1, 2, 'POINT')} + ' ' + ${r.ingredient.unit} + ' ' + ${r.ingredient.name}"></div>
   </a>
 
   <div th:if="${#maps.isEmpty(groupedRecipes)}" class="empty-state">
