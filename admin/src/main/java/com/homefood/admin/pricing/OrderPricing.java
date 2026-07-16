@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 
 /**
  * Flat price x quantity by default. When tieredDiscountEnabled is true (currently only Квашеная
- * капуста, see Product.tieredDiscountEnabled): jar #1 full price, jars #2-3 discounted $1 each,
- * jar #4 onward back to full price (the discount doesn't keep stacking).
+ * капуста, see Product.tieredDiscountEnabled): unit #1 full price, units #2-3 discounted $1 each,
+ * unit #4 onward back to full price (the discount doesn't keep stacking).
  */
 public final class OrderPricing {
 
@@ -17,11 +17,11 @@ public final class OrderPricing {
             return basePrice.multiply(BigDecimal.valueOf(quantity));
         }
         BigDecimal total = BigDecimal.ZERO;
-        for (int jarIndex = 1; jarIndex <= quantity; jarIndex++) {
-            BigDecimal jarPrice = (jarIndex == 2 || jarIndex == 3)
+        for (int unitIndex = 1; unitIndex <= quantity; unitIndex++) {
+            BigDecimal unitPrice = (unitIndex == 2 || unitIndex == 3)
                     ? basePrice.subtract(BigDecimal.ONE)
                     : basePrice;
-            total = total.add(jarPrice);
+            total = total.add(unitPrice);
         }
         return total;
     }

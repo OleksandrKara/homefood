@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -78,8 +79,7 @@ public class PublicShopController {
      * product the customer added), read as raw servlet parameters rather than @RequestParam
      * List<String> - Spring's collection conversion silently comma-splits a single-element list,
      * corrupting a lone numeric value with no error shown (see RecipeController for the original
-     * bug this pattern avoids). One Client and one shared createdAt are used for every line, so the
-     * whole cart is tied together as a single checkout for the client and for rate-limiting.
+     * bug this pattern avoids). The whole cart becomes a single Order with one OrderItem per line.
      */
     @PostMapping("/reserve")
     public String reserve(@RequestParam String name,
@@ -105,8 +105,16 @@ public class PublicShopController {
         String[] quantities = request.getParameterValues("quantity");
         int rowCount = productIds == null ? 0 : productIds.length;
 
-        Instant now = Instant.now();
-        List<Order> newOrders = new ArrayList<>();
+        Order order = new Order();
+        order.setDeliveryType(DeliveryType.PICKUP);
+        order.setStatus(OrderStatus.REQUESTED);
+        order.setDeliveryDate(preferredDate);
+        order.setDeliveryTime(preferredTime);
+        if (notes != null && !notes.isBlank()) {
+            order.setNotes(notes.trim());
+        }
+
+        List<OrderItem> items = new ArrayList<>();
         Set<Long> seenProducts = new HashSet<>();
 
         for (int i = 0; i < rowCount; i++) {
@@ -133,29 +141,22 @@ public class PublicShopController {
             if (product == null) {
                 return "redirect:/shop?error=1";
             }
-            // Active/in-stock items are capped tighter (physical jars on hand); inactive items are
+            // Active/in-stock items are capped tighter (physical units on hand); inactive items are
             // made-to-order and confirmed by phone anyway, so a higher cap is fine.
             int maxForProduct = product.isActive() ? MAX_RESERVATION_QUANTITY : MAX_ON_DEMAND_QUANTITY;
             if (quantity > maxForProduct) {
                 return "redirect:/shop?error=1";
             }
 
-            Order order = new Order();
-            order.setProduct(product);
-            order.setQuantity(quantity);
-            order.setDeliveryType(DeliveryType.PICKUP);
-            order.setStatus(OrderStatus.REQUESTED);
-            order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), quantity, product.isTieredDiscountEnabled()));
-            order.setDeliveryDate(preferredDate);
-            order.setDeliveryTime(preferredTime);
-            order.setCreatedAt(now);
-            if (notes != null && !notes.isBlank()) {
-                order.setNotes(notes.trim());
-            }
-            newOrders.add(order);
+            OrderItem item = new OrderItem();
+            item.setOrder(order);
+            item.setProduct(product);
+            item.setQuantity(quantity);
+            item.setLineTotal(OrderPricing.calculateTotal(product.getBasePrice(), quantity, product.isTieredDiscountEnabled()));
+            items.add(item);
         }
 
-        if (newOrders.isEmpty()) {
+        if (items.isEmpty()) {
             return "redirect:/shop?error=1";
         }
 
@@ -163,7 +164,7 @@ public class PublicShopController {
         // below both match however staff/customers already have this number stored, regardless of
         // how it was formatted at the time.
         String canonicalPhone = PhoneNumbers.canonicalize(phone);
-        Instant hourAgo = now.minus(1, ChronoUnit.HOURS);
+        Instant hourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
         if (orderRepository.countByClientPhoneSince(canonicalPhone, hourAgo) >= MAX_RESERVATIONS_PER_PHONE_PER_HOUR) {
             return "redirect:/shop?error=1";
         }
@@ -185,10 +186,10 @@ public class PublicShopController {
         }
         clientRepository.save(client);
 
-        for (Order order : newOrders) {
-            order.setClient(client);
-        }
-        orderRepository.saveAll(newOrders);
+        order.setClient(client);
+        order.setItems(items);
+        order.setTotalPrice(items.stream().map(OrderItem::getLineTotal).reduce(BigDecimal.ZERO, BigDecimal::add));
+        orderRepository.save(order);
 
         return "redirect:/shop?reserved=1";
     }

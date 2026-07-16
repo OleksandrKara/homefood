@@ -28,19 +28,47 @@
   </div>
 
   <div class="mb-3">
-    <label class="form-label" for="product-select">Товар</label>
-    <select id="product-select" name="productId" class="form-select" required>
-      <option th:each="p : ${products}" th:value="${p.id}" th:attr="data-price=${p.basePrice},data-discount=${p.tieredDiscountEnabled}"
-              th:text="${p.name} + ' ' + ${p.sizeLabel} + ' — $' + ${#numbers.formatDecimal(p.basePrice, 1, 2, 'POINT')} + '/банка'"
-              th:selected="${order.product != null and order.product.id == p.id}"></option>
-    </select>
+    <label class="form-label">Товары</label>
+    <div id="order-items">
+      <div class="order-item-row" th:each="item : ${order.items}" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+        <select name="itemProductId" class="form-select item-product-select" style="flex:2;">
+          <option value="">— товар —</option>
+          <option th:each="p : ${products}" th:value="${p.id}"
+                  th:attr="data-price=${p.basePrice},data-discount=${p.tieredDiscountEnabled}"
+                  th:text="${p.name} + ' ' + ${p.sizeLabel} + ' — $' + ${#numbers.formatDecimal(p.basePrice, 1, 2, 'POINT')} + '/' + ${p.unit}"
+                  th:selected="${item.product != null and item.product.id == p.id}"></option>
+        </select>
+        <input type="number" min="1" name="itemQuantity" th:value="${item.quantity}" class="form-control item-quantity-input" placeholder="кол-во" style="flex:1;"/>
+        <button type="button" class="btn btn-outline-secondary remove-item-row" aria-label="Удалить товар" style="min-height:48px;">✕</button>
+      </div>
+
+      <div class="order-item-row" th:if="${#lists.isEmpty(order.items)}" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+        <select name="itemProductId" class="form-select item-product-select" style="flex:2;">
+          <option value="">— товар —</option>
+          <option th:each="p : ${products}" th:value="${p.id}"
+                  th:attr="data-price=${p.basePrice},data-discount=${p.tieredDiscountEnabled}"
+                  th:text="${p.name} + ' ' + ${p.sizeLabel} + ' — $' + ${#numbers.formatDecimal(p.basePrice, 1, 2, 'POINT')} + '/' + ${p.unit}"></option>
+        </select>
+        <input type="number" min="1" name="itemQuantity" value="1" class="form-control item-quantity-input" placeholder="кол-во" style="flex:1;"/>
+        <button type="button" class="btn btn-outline-secondary remove-item-row" aria-label="Удалить товар" style="min-height:48px;">✕</button>
+      </div>
+    </div>
+    <button type="button" id="add-item-row" class="btn btn-outline-dark w-100 mb-2">+ Добавить товар</button>
+    <div id="order-total-estimate" style="font-size:1.05rem; font-weight:600;"></div>
   </div>
 
-  <div class="mb-3">
-    <label class="form-label" for="quantity-input">Количество банок</label>
-    <input type="number" min="1" id="quantity-input" th:field="*{quantity}" class="form-control" required/>
-    <div id="price-estimate" class="mt-2" style="font-size:1.05rem; font-weight:600;"></div>
-  </div>
+  <template id="empty-item-row-template">
+    <div class="order-item-row" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+      <select name="itemProductId" class="form-select item-product-select" style="flex:2;">
+        <option value="">— товар —</option>
+        <option th:each="p : ${products}" th:value="${p.id}"
+                th:attr="data-price=${p.basePrice},data-discount=${p.tieredDiscountEnabled}"
+                th:text="${p.name} + ' ' + ${p.sizeLabel} + ' — $' + ${#numbers.formatDecimal(p.basePrice, 1, 2, 'POINT')} + '/' + ${p.unit}"></option>
+      </select>
+      <input type="number" min="1" name="itemQuantity" class="form-control item-quantity-input" placeholder="кол-во" style="flex:1;"/>
+      <button type="button" class="btn btn-outline-secondary remove-item-row" aria-label="Удалить товар" style="min-height:48px;">✕</button>
+    </div>
+  </template>
 
   <div class="mb-3">
     <label class="form-label">Способ получения</label>
@@ -190,37 +218,62 @@
   toggleDoneFields();
 
   // Mirrors OrderPricing.calculateTotal server-side: flat price x quantity, unless the product
-  // has the tiered discount enabled (jars 2-3 get $1 off each) - currently only Квашеная капуста.
-  function calculateTotal(basePrice, quantity, tieredDiscountEnabled) {
+  // has the tiered discount enabled (units 2-3 get $1 off each) - currently only Квашеная капуста.
+  function calculateLineTotal(basePrice, quantity, tieredDiscountEnabled) {
     if (!tieredDiscountEnabled) {
       return basePrice * quantity;
     }
     var total = 0;
-    for (var jarIndex = 1; jarIndex <= quantity; jarIndex++) {
-      total += (jarIndex === 2 || jarIndex === 3) ? (basePrice - 1) : basePrice;
+    for (var unitIndex = 1; unitIndex <= quantity; unitIndex++) {
+      total += (unitIndex === 2 || unitIndex === 3) ? (basePrice - 1) : basePrice;
     }
     return total;
   }
 
-  function updatePriceEstimate() {
-    var productSelect = document.getElementById('product-select');
-    var quantityInput = document.getElementById('quantity-input');
-    var estimateEl = document.getElementById('price-estimate');
-    var option = productSelect.options[productSelect.selectedIndex];
-    var basePrice = option ? parseFloat(option.getAttribute('data-price')) : NaN;
-    var tieredDiscountEnabled = option ? option.getAttribute('data-discount') === 'true' : false;
-    var quantity = parseInt(quantityInput.value, 10);
-    if (isNaN(basePrice) || isNaN(quantity) || quantity < 1) {
-      estimateEl.textContent = '';
-      return;
-    }
-    var total = calculateTotal(basePrice, quantity, tieredDiscountEnabled);
-    estimateEl.textContent = 'Итого: $' + total.toFixed(2);
+  // ---- Order items: add/remove product rows, running total ----
+  var itemsContainer = document.getElementById('order-items');
+
+  function updateOrderTotal() {
+    var total = 0;
+    document.querySelectorAll('.order-item-row').forEach(function (row) {
+      var select = row.querySelector('.item-product-select');
+      var option = select.options[select.selectedIndex];
+      if (!option || !option.value) { return; }
+      var basePrice = parseFloat(option.getAttribute('data-price'));
+      var tieredDiscountEnabled = option.getAttribute('data-discount') === 'true';
+      var quantity = parseInt(row.querySelector('.item-quantity-input').value, 10);
+      if (isNaN(basePrice) || isNaN(quantity) || quantity < 1) { return; }
+      total += calculateLineTotal(basePrice, quantity, tieredDiscountEnabled);
+    });
+    var estimateEl = document.getElementById('order-total-estimate');
+    estimateEl.textContent = total > 0 ? ('Итого: $' + total.toFixed(2)) : '';
   }
 
-  document.getElementById('product-select').addEventListener('change', updatePriceEstimate);
-  document.getElementById('quantity-input').addEventListener('input', updatePriceEstimate);
-  updatePriceEstimate();
+  function wireItemRow(row) {
+    row.querySelector('.item-product-select').addEventListener('change', updateOrderTotal);
+    row.querySelector('.item-quantity-input').addEventListener('input', updateOrderTotal);
+    row.querySelector('.remove-item-row').addEventListener('click', function () {
+      if (itemsContainer.children.length > 1) {
+        row.remove();
+      } else {
+        row.querySelector('select').value = '';
+        row.querySelector('input').value = '';
+      }
+      updateOrderTotal();
+    });
+  }
+
+  document.querySelectorAll('.order-item-row').forEach(wireItemRow);
+
+  document.getElementById('add-item-row').addEventListener('click', function () {
+    var template = document.getElementById('empty-item-row-template');
+    var clone = template.content.cloneNode(true);
+    itemsContainer.appendChild(clone);
+    wireItemRow(itemsContainer.lastElementChild);
+    updateOrderTotal();
+  });
+
+  updateOrderTotal();
 
   // The app is deployed under a context path (/admin) that th:href/th:action handle
   // automatically, but a hand-built fetch() URL doesn't go through Thymeleaf at request time -
