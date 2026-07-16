@@ -1,8 +1,6 @@
 package com.homefood.admin.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -14,6 +12,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -30,14 +30,10 @@ public class Order {
     @JoinColumn(name = "client_id")
     private Client client;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "product_id")
-    private Product product;
-
-    @NotNull(message = "Укажите количество")
-    @Min(value = 1, message = "Количество должно быть не меньше 1")
-    @Column(nullable = false)
-    private Integer quantity;
+    /** An order can contain several products - see OrderItem. Populated/replaced by
+     * OrderController from the submitted form rows, not bound directly by Spring MVC. */
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> items = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "delivery_type", nullable = false)

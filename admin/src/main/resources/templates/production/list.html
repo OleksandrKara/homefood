@@ -10,7 +10,7 @@
       <div class="row-top">
         <span class="title" th:text="${#temporals.format(b.batchDate, 'dd.MM.yyyy')}"></span>
         <span class="badge-status" th:classappend="${b.status.name() == 'PLANNED'} ? 'badge-status-NEW' : 'badge-status-DONE'"
-              th:text="(${b.status.name() == 'PLANNED'} ? '🗓 план ' : '✅ ') + '+' + ${b.quantityProduced} + ' шт'"></span>
+              th:text="(${b.status.name() == 'PLANNED'} ? '🗓 план ' : '✅ ') + '+' + ${b.quantityProduced} + ' ' + ${b.product.unit}"></span>
       </div>
       <div class="subtitle" th:text="${b.product.name} + ' ' + ${b.product.sizeLabel}"></div>
       <div class="meta" th:if="${b.pickupLocation != null and !b.pickupLocation.isEmpty()}">

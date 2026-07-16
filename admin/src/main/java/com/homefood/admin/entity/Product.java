@@ -31,6 +31,14 @@ public class Product {
     @Column(name = "size_label")
     private String sizeLabel;
 
+    /** Countable unit noun shown wherever a quantity of this product is displayed (price "$X/unit",
+     * stock "N unit", order line "qty unit") - lets each product use its own word (банка, шт, кг...)
+     * instead of one hardcoded word for every product. */
+    @NotBlank(message = "Укажите единицу измерения")
+    @Size(max = 50, message = "Слишком длинная единица измерения")
+    @Column(nullable = false)
+    private String unit = "шт";
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -56,7 +64,7 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
-    /** Jars #2-3 discounted $1 each when enabled (see OrderPricing) - kept for Квашеная капуста
+    /** Units #2-3 discounted $1 each when enabled (see OrderPricing) - kept for Квашеная капуста
      * only; every other product uses flat price x quantity, since the discount doesn't make
      * sense for count/weight-based items like a cake or a bag of dumplings. */
     @Column(name = "tiered_discount_enabled", nullable = false)

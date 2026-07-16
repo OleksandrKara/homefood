@@ -36,7 +36,7 @@
   <h2 class="group-header group-toggle" th:classappend="${dateEntry.key != 'Сегодня'} ? ' is-collapsed'">
     <span th:text="${dateEntry.key}"></span>
     <span class="group-header-right">
-      <span class="jars-badge" th:text="'🫙 ' + ${jarsByDate.get(dateEntry.key)}"></span>
+      <span class="jars-badge" th:text="'📦 ' + ${itemCountByDate.get(dateEntry.key)}"></span>
       <span class="chevron group-chevron">›</span>
     </span>
   </h2>

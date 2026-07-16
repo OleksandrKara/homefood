@@ -9,7 +9,7 @@
 
   <div class="mb-3">
     <div class="form-label" style="font-size:1.05rem;" th:text="${product.name} + ' ' + ${product.sizeLabel}"></div>
-    <div style="font-size:0.85rem; color:#868e96;">Сколько каждого сырья уходит на 1 банку</div>
+    <div style="font-size:0.85rem; color:#868e96;" th:text="'Сколько каждого сырья уходит на 1 ' + ${product.unit}"></div>
   </div>
 
   <div id="recipe-rows">

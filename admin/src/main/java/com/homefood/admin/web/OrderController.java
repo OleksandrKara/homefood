@@ -3,21 +3,26 @@ package com.homefood.admin.web;
 import com.homefood.admin.entity.Client;
 import com.homefood.admin.entity.DeliveryType;
 import com.homefood.admin.entity.Order;
+import com.homefood.admin.entity.OrderItem;
 import com.homefood.admin.entity.OrderStatus;
 import com.homefood.admin.entity.Product;
 import com.homefood.admin.pricing.OrderPricing;
 import com.homefood.admin.repository.ClientRepository;
 import com.homefood.admin.repository.DistrictRepository;
+import com.homefood.admin.repository.OrderItemRepository;
 import com.homefood.admin.repository.OrderRepository;
 import com.homefood.admin.repository.PaymentMethodRepository;
 import com.homefood.admin.repository.ProductRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -47,6 +52,7 @@ public class OrderController {
     };
 
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     private final ClientRepository clientRepository;
     private final ProductRepository productRepository;
     private final DistrictRepository districtRepository;
@@ -57,7 +63,7 @@ public class OrderController {
         List<Order> all = orderRepository.findAllByOrderByDeliveryDateAscDeliveryTimeAsc();
 
         Map<String, Map<String, List<Order>>> grouped = new LinkedHashMap<>();
-        Map<String, Integer> jarsByDate = new LinkedHashMap<>();
+        Map<String, Integer> itemCountByDate = new LinkedHashMap<>();
         List<Order> requested = new ArrayList<>();
 
         for (Order o : all) {
@@ -78,12 +84,12 @@ public class OrderController {
             grouped.computeIfAbsent(dateLabel, k -> new LinkedHashMap<>())
                     .computeIfAbsent(subLabel, k -> new ArrayList<>())
                     .add(o);
-            jarsByDate.merge(dateLabel, o.getQuantity(), Integer::sum);
+            itemCountByDate.merge(dateLabel, totalQuantity(o), Integer::sum);
         }
 
         model.addAttribute("requestedOrders", requested);
         model.addAttribute("groupedOrders", grouped);
-        model.addAttribute("jarsByDate", jarsByDate);
+        model.addAttribute("itemCountByDate", itemCountByDate);
         model.addAttribute("soldTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.DONE));
         model.addAttribute("expectedTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.NEW));
         model.addAttribute("tipsTotal", orderRepository.sumTipAmountByStatus(OrderStatus.DONE));
@@ -124,7 +130,6 @@ public class OrderController {
     @GetMapping("/new")
     public String newForm(Model model) {
         Order order = new Order();
-        order.setQuantity(1);
         addFormAttributes(model, null);
         model.addAttribute("order", order);
         return "orders/form";
@@ -132,15 +137,18 @@ public class OrderController {
 
     @PostMapping
     public String create(@Valid @ModelAttribute("order") Order order, BindingResult result,
-                          @RequestParam Long clientId, @RequestParam Long productId, Model model) {
+                          @RequestParam Long clientId, HttpServletRequest request, Model model) {
+        List<OrderItem> items = buildItems(order, request);
+        if (items.isEmpty()) {
+            result.reject("items", "Добавьте хотя бы один товар");
+        }
         if (result.hasErrors()) {
             addFormAttributes(model, null);
             return "orders/form";
         }
-        Product product = productRef(productId);
         order.setClient(clientRef(clientId));
-        order.setProduct(product);
-        order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), order.getQuantity(), product.isTieredDiscountEnabled()));
+        order.setItems(items);
+        order.setTotalPrice(sumItems(items));
         orderRepository.save(order);
         return "redirect:/orders";
     }
@@ -148,32 +156,37 @@ public class OrderController {
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         Order order = orderRef(id);
-        addFormAttributes(model, order.getProduct());
+        addFormAttributes(model, order);
         model.addAttribute("order", order);
         return "orders/form";
     }
 
+    @Transactional
     @PostMapping("/{id}")
     public String update(@PathVariable Long id, @Valid @ModelAttribute("order") Order order, BindingResult result,
-                          @RequestParam Long clientId, @RequestParam Long productId, Model model) {
+                          @RequestParam Long clientId, HttpServletRequest request, Model model) {
         Order existing = orderRef(id);
+        List<OrderItem> items = buildItems(order, request);
+        if (items.isEmpty()) {
+            result.reject("items", "Добавьте хотя бы один товар");
+        }
         if (result.hasErrors()) {
-            addFormAttributes(model, existing.getProduct());
+            addFormAttributes(model, existing);
             return "orders/form";
         }
-        Product product = productRef(productId);
         order.setId(id);
         order.setCreatedAt(existing.getCreatedAt());
         order.setArchived(existing.isArchived());
         order.setClient(clientRef(clientId));
-        order.setProduct(product);
-        order.setTotalPrice(OrderPricing.calculateTotal(product.getBasePrice(), order.getQuantity(), product.isTieredDiscountEnabled()));
+        order.setItems(items);
+        order.setTotalPrice(sumItems(items));
+        orderItemRepository.deleteByOrderId(id);
         orderRepository.save(order);
         return "redirect:/orders";
     }
 
     private Order orderRef(Long id) {
-        return orderRepository.findById(id)
+        return orderRepository.findWithItemsById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
     }
 
@@ -187,22 +200,80 @@ public class OrderController {
                 .orElseThrow(() -> new IllegalArgumentException("Product not found: " + id));
     }
 
-    /** Active products, plus the currently-assigned one even if it's been deactivated since. */
-    private List<Product> selectableProducts(Product currentProduct) {
+    /**
+     * Reads parallel itemProductId[]/itemQuantity[] arrays as raw servlet parameters rather than
+     * @RequestParam List<String> - Spring's collection conversion silently comma-splits a
+     * single-element list, corrupting a lone numeric value with no error shown (same reasoning as
+     * PublicShopController.reserve and RecipeController). Rows with a blank product/quantity or a
+     * quantity below 1 are skipped rather than rejected outright, so a stray empty row left in the
+     * form doesn't block saving the rest.
+     */
+    private List<OrderItem> buildItems(Order order, HttpServletRequest request) {
+        String[] productIds = request.getParameterValues("itemProductId");
+        String[] quantities = request.getParameterValues("itemQuantity");
+        int rowCount = productIds == null ? 0 : productIds.length;
+
+        List<OrderItem> items = new ArrayList<>();
+        for (int i = 0; i < rowCount; i++) {
+            String productIdStr = productIds[i];
+            String qtyStr = (quantities != null && i < quantities.length) ? quantities[i] : null;
+            if (productIdStr == null || productIdStr.isBlank() || qtyStr == null || qtyStr.isBlank()) {
+                continue;
+            }
+            Long productId;
+            int quantity;
+            try {
+                productId = Long.valueOf(productIdStr.trim());
+                quantity = Integer.parseInt(qtyStr.trim());
+            } catch (NumberFormatException e) {
+                continue;
+            }
+            if (quantity < 1) {
+                continue;
+            }
+            Product product = productRef(productId);
+            OrderItem item = new OrderItem();
+            item.setOrder(order);
+            item.setProduct(product);
+            item.setQuantity(quantity);
+            item.setLineTotal(OrderPricing.calculateTotal(product.getBasePrice(), quantity, product.isTieredDiscountEnabled()));
+            items.add(item);
+        }
+        return items;
+    }
+
+    private BigDecimal sumItems(List<OrderItem> items) {
+        return items.stream().map(OrderItem::getLineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private int totalQuantity(Order order) {
+        return order.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
+    }
+
+    /** Active products, plus any product still assigned to the order's current line items even if
+     * it's been deactivated since. */
+    private List<Product> selectableProducts(Order currentOrder) {
         List<Product> products = new ArrayList<>(productRepository.findAllByActiveTrueOrderByNameAsc());
-        if (currentProduct != null && !currentProduct.isActive()) {
-            products.add(currentProduct);
+        if (currentOrder == null) {
+            return products;
+        }
+        for (OrderItem item : currentOrder.getItems()) {
+            Product p = item.getProduct();
+            if (!p.isActive() && products.stream().noneMatch(existing -> existing.getId().equals(p.getId()))) {
+                products.add(p);
+            }
         }
         return products;
     }
 
     /**
-     * @param currentProduct the order's currently-assigned product, if editing - included even
-     *                       when inactive so the dropdown still shows/keeps it selected.
+     * @param currentOrder the order being edited, if any - its currently-assigned products are
+     *                      included even when inactive so their dropdown rows still show/keep them
+     *                      selected.
      */
-    private void addFormAttributes(Model model, Product currentProduct) {
+    private void addFormAttributes(Model model, Order currentOrder) {
         model.addAttribute("clients", clientRepository.findAllByOrderByNameAsc());
-        model.addAttribute("products", selectableProducts(currentProduct));
+        model.addAttribute("products", selectableProducts(currentOrder));
         model.addAttribute("deliveryTypes", DeliveryType.values());
         model.addAttribute("statuses", OrderStatus.values());
         model.addAttribute("districts", districtRepository.findAllByOrderByNameAsc());

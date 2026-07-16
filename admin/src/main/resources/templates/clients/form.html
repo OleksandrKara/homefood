@@ -49,8 +49,9 @@
         <span class="badge-status" th:classappend="'badge-status-' + ${o.status}"
               th:text="${o.status.name() == 'REQUESTED' ? '🔔 Заявка' : (o.status.name() == 'NEW' ? 'Новый' : (o.status.name() == 'DONE' ? 'Готово' : 'Отменён'))}"></span>
       </div>
-      <div class="subtitle"
-           th:text="${o.product.name} + ' ' + ${o.product.sizeLabel} + ' · ' + ${o.quantity} + ' шт' + (${o.totalPrice} != null ? ' · $' + ${#numbers.formatDecimal(o.totalPrice, 1, 2, 'POINT')} : '')"></div>
+      <div class="subtitle" th:each="item : ${o.items}"
+           th:text="${item.product.name} + ' ' + ${item.product.sizeLabel} + ' · ' + ${item.quantity} + ' ' + ${item.product.unit}"></div>
+      <div class="subtitle" th:if="${o.totalPrice != null}" th:text="'Итого: $' + ${#numbers.formatDecimal(o.totalPrice, 1, 2, 'POINT')}"></div>
     </a>
   </div>
   <div th:if="${#lists.isEmpty(orderHistory)}" class="empty-state" style="padding:30px 24px;">

@@ -40,7 +40,7 @@
         <div class="shop-product-name" th:text="${p.name} + ' ' + ${p.sizeLabel}"></div>
         <div class="shop-product-price" th:text="'$' + ${#numbers.formatDecimal(p.basePrice, 1, 2, 'POINT')}"></div>
       </div>
-      <span class="shop-stock-badge shop-stock-in" th:if="${p.stockQuantity > 0}" th:text="#{shop.stock.in(${p.stockQuantity})}"></span>
+      <span class="shop-stock-badge shop-stock-in" th:if="${p.stockQuantity > 0}" th:text="#{shop.stock.in(${p.stockQuantity}, ${p.unit})}"></span>
       <span class="shop-stock-badge shop-stock-out" th:unless="${p.stockQuantity > 0}" th:text="#{shop.stock.out}"></span>
 
       <div class="shop-qty-row">
@@ -148,14 +148,14 @@
   var totalPrefix = /*[[#{shop.cart.total.prefix}]]*/ 'Total:';
 
   // Mirrors OrderPricing.calculateTotal server-side: flat price x quantity, unless the product
-  // has the tiered discount enabled (jars 2-3 get $1 off each) - currently only Квашеная капуста.
+  // has the tiered discount enabled (units 2-3 get $1 off each) - currently only Квашеная капуста.
   function calculateTotal(basePrice, quantity, tieredDiscountEnabled) {
     if (!tieredDiscountEnabled) {
       return basePrice * quantity;
     }
     var total = 0;
-    for (var jarIndex = 1; jarIndex <= quantity; jarIndex++) {
-      total += (jarIndex === 2 || jarIndex === 3) ? (basePrice - 1) : basePrice;
+    for (var unitIndex = 1; unitIndex <= quantity; unitIndex++) {
+      total += (unitIndex === 2 || unitIndex === 3) ? (basePrice - 1) : basePrice;
     }
     return total;
   }
