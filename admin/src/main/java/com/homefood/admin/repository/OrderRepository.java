@@ -50,6 +50,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COALESCE(SUM(o.tipAmount), 0) FROM Order o WHERE o.status = :status")
     BigDecimal sumTipAmountByStatus(OrderStatus status);
 
+    long countByStatus(OrderStatus status);
+
+    /** Paid-orders breakdown by payment method - see PaymentMethodController. */
+    @Query("SELECT new com.homefood.admin.repository.PaymentMethodStats(" +
+            "COALESCE(o.paymentMethod, '(не указан)'), COUNT(o), COALESCE(SUM(o.totalPrice), 0)) " +
+            "FROM Order o WHERE o.status = :status GROUP BY o.paymentMethod ORDER BY SUM(o.totalPrice) DESC")
+    List<PaymentMethodStats> sumAndCountByPaymentMethodAndStatus(OrderStatus status);
+
     @Query("SELECT DISTINCT o.deliveryAddress FROM Order o WHERE o.deliveryAddress IS NOT NULL AND o.deliveryAddress <> ''")
     List<String> findDistinctDeliveryAddresses();
 

@@ -4,6 +4,27 @@
 <body>
 <div th:replace="~{fragments/layout :: topbar(title='Способы оплаты')}"></div>
 
+<h2 class="group-header">💰 Оплачено по способам</h2>
+<div class="history-stats" th:if="${paidCount > 0}">
+  Всего заказов: <b th:text="${paidCount}"></b> ·
+  На сумму: <b th:text="'$' + ${#numbers.formatDecimal(paidTotal, 1, 2, 'POINT')}"></b>
+</div>
+<div class="card-list">
+  <div th:each="s : ${stats}" class="item-card">
+    <div class="row-top">
+      <span class="title" th:text="${s.paymentMethod}"></span>
+      <span class="subtitle" th:text="'$' + ${#numbers.formatDecimal(s.total, 1, 2, 'POINT')}"></span>
+    </div>
+    <div class="meta"><span th:text="${s.orderCount} + ' зак.'"></span></div>
+  </div>
+
+  <div th:if="${paidCount == 0}" class="empty-state" style="padding:30px 24px;">
+    <div class="icon">💰</div>
+    Пока нет оплаченных заказов.
+  </div>
+</div>
+
+<h2 class="group-header">⚙️ Управление способами оплаты</h2>
 <div class="card-list">
   <a th:each="pm : ${paymentMethods}" th:href="@{'/payment-methods/' + ${pm.id} + '/edit'}" class="item-card">
     <span class="title" th:text="${pm.name}"></span>
