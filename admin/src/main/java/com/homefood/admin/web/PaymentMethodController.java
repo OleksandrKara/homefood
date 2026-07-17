@@ -1,6 +1,8 @@
 package com.homefood.admin.web;
 
+import com.homefood.admin.entity.OrderStatus;
 import com.homefood.admin.entity.PaymentMethod;
+import com.homefood.admin.repository.OrderRepository;
 import com.homefood.admin.repository.PaymentMethodRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +21,14 @@ import java.util.Map;
 public class PaymentMethodController {
 
     private final PaymentMethodRepository paymentMethodRepository;
+    private final OrderRepository orderRepository;
 
     @GetMapping
     public String list(Model model) {
         model.addAttribute("paymentMethods", paymentMethodRepository.findAllByOrderByNameAsc());
+        model.addAttribute("stats", orderRepository.sumAndCountByPaymentMethodAndStatus(OrderStatus.DONE));
+        model.addAttribute("paidCount", orderRepository.countByStatus(OrderStatus.DONE));
+        model.addAttribute("paidTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.DONE));
         return "payment-methods/list";
     }
 
