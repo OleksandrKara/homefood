@@ -7,6 +7,12 @@
        long-running JS timers, so the page reloads itself the boring, reliable way instead of
        polling via fetch(). -->
   <meta http-equiv="refresh" content="60"/>
+  <!-- Lets iOS open this full-screen (no Safari address bar/tab bar) when launched from a
+       "Add to Home Screen" icon - AirPlay mirrors whatever is on the phone's screen, address bar
+       included, so this is what actually gets a clean full-screen result on the TV. -->
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="homefood"/>
   <title>homefood — Дашборд</title>
   <style>
     :root {
