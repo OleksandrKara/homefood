@@ -53,6 +53,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByStatus(OrderStatus status);
 
+    /** Unique customers with at least one paid order - see DashboardController. */
+    @Query("SELECT COUNT(DISTINCT o.client.id) FROM Order o WHERE o.status = :status")
+    long countDistinctClientsByStatus(OrderStatus status);
+
     /** Revenue for one delivery date (paid orders only) - see DashboardController. */
     @Query("SELECT COALESCE(SUM(o.totalPrice), 0) FROM Order o WHERE o.status = :status AND o.deliveryDate = :date")
     BigDecimal sumTotalPriceByStatusAndDeliveryDate(OrderStatus status, LocalDate date);

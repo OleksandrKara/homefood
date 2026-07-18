@@ -16,4 +16,8 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             "FROM OrderItem oi JOIN oi.product p JOIN oi.order o " +
             "WHERE o.status = :status GROUP BY p.id, p.name, p.unit ORDER BY SUM(oi.lineTotal) DESC")
     List<ProductSalesStats> topProductsByRevenue(OrderStatus status);
+
+    /** Total units sold across every product (paid orders only) - see DashboardController. */
+    @Query("SELECT COALESCE(SUM(oi.quantity), 0) FROM OrderItem oi JOIN oi.order o WHERE o.status = :status")
+    long sumQuantityByOrderStatus(OrderStatus status);
 }

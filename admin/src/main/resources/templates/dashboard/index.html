@@ -3,16 +3,22 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <!-- Kiosk browsers on cheap TV sticks are often flaky about long-running JS timers, so the page
-       reloads itself the boring, reliable way instead of polling via fetch(). -->
+  <!-- Kiosk browsers on cheap TV sticks (and Safari mirrored from a phone) are often flaky about
+       long-running JS timers, so the page reloads itself the boring, reliable way instead of
+       polling via fetch(). -->
   <meta http-equiv="refresh" content="60"/>
   <title>homefood — Дашборд</title>
   <style>
     :root {
-      --accent-green: #34d399;
-      --accent-gold: #fbbf24;
-      --accent-blue: #60a5fa;
-      --accent-pink: #f472b6;
+      /* One semantic color per category, used consistently everywhere instead of one-off colors
+         per card: green = revenue/growth, red = loss/warning, blue = momentum/time, violet =
+         scale/reach, gold = tips/bonus. */
+      --c-green: #34d399;
+      --c-red: #f87171;
+      --c-blue: #60a5fa;
+      --c-violet: #a78bfa;
+      --c-gold: #fbbf24;
+      --c-muted: #cbd5e1;
     }
     * { box-sizing: border-box; }
     html, body {
@@ -24,70 +30,86 @@
     /* Screen-shared from a phone (AirPlay etc.), the TV shows exactly what renders on the phone's
        own small viewport, not a 1080p one - every size below scales with clamp()/vw so this still
        looks intentional (not cut off) from a phone screen up through an actual TV browser. */
-    .wrap { padding: 3vh 4vw; min-height: 100vh; display: flex; flex-direction: column; gap: 2vh; }
+    .wrap { padding: 2.6vh 4vw; min-height: 100vh; display: flex; flex-direction: column; gap: 1.6vh; }
 
     .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
-    .brand { font-size: clamp(1.3rem, 4vw, 2rem); font-weight: 800; letter-spacing: .02em; display: flex; align-items: center; gap: 12px; }
-    .clock { font-size: clamp(.95rem, 2.6vw, 1.4rem); opacity: .7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .brand { font-size: clamp(1.2rem, 3.6vw, 1.8rem); font-weight: 800; letter-spacing: .02em; display: flex; align-items: center; gap: 12px; }
+    .clock { font-size: clamp(.9rem, 2.4vw, 1.25rem); opacity: .65; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+    .section-label {
+      font-size: clamp(.68rem, 1.7vw, .82rem); font-weight: 800; text-transform: uppercase;
+      letter-spacing: .12em; opacity: .45; margin: 2px 0 -8px 6px;
+    }
+
+    /* ---- Headline duo: lifetime revenue + the honest bottom line ---- */
+    .dual-hero { display: flex; flex-wrap: wrap; gap: 1.4vw; }
     .hero {
-      text-align: center;
+      flex: 1 1 320px; text-align: center; border-radius: 26px;
+      padding: clamp(12px, 2.2vh, 28px) 2vw;
+    }
+    .hero.tone-green {
       background: linear-gradient(135deg, rgba(52,211,153,.18), rgba(52,211,153,.02));
-      border: 1px solid rgba(52,211,153,.35);
-      border-radius: 28px;
-      padding: clamp(16px, 3vh, 40px) 2vw;
-      box-shadow: 0 0 60px rgba(52,211,153,.15);
+      border: 1px solid rgba(52,211,153,.4); box-shadow: 0 0 50px rgba(52,211,153,.15);
+    }
+    .hero.tone-red {
+      background: linear-gradient(135deg, rgba(248,113,113,.18), rgba(248,113,113,.02));
+      border: 1px solid rgba(248,113,113,.4); box-shadow: 0 0 50px rgba(248,113,113,.15);
     }
     .hero-label {
-      font-size: clamp(.9rem, 2.6vw, 1.5rem); opacity: .75; font-weight: 600;
+      font-size: clamp(.8rem, 2.2vw, 1.25rem); opacity: .8; font-weight: 700;
       text-transform: uppercase; letter-spacing: .08em;
     }
-    .hero-value {
-      font-size: clamp(3rem, 13vw, 8rem); font-weight: 900; color: var(--accent-green); line-height: 1; margin-top: 6px;
-      text-shadow: 0 0 40px rgba(52,211,153,.5);
-    }
+    .hero-value { font-weight: 900; line-height: 1; margin-top: 4px; font-size: clamp(2.4rem, 8vw, 5.5rem); }
+    .hero-value.green { color: var(--c-green); text-shadow: 0 0 40px rgba(52,211,153,.5); }
+    .hero-value.red { color: var(--c-red); text-shadow: 0 0 40px rgba(248,113,113,.5); }
+    .hero-sub { font-size: clamp(.7rem, 1.9vw, .95rem); opacity: .6; margin-top: 6px; }
 
-    /* auto-fit + minmax lets the grid drop from 4 columns down to 1 on its own as the viewport
-       narrows, instead of a fixed column count overflowing off-screen on a phone. */
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.6vw; }
+    /* ---- Stat rows (momentum, scale/impact) ---- */
+    .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1.4vw; }
     .card {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 20px;
-      padding: 2vh 1.4vw;
-      display: flex; flex-direction: column; justify-content: center; gap: 6px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 18px;
+      padding: 1.6vh 1.2vw;
+      display: flex; flex-direction: column; justify-content: center; gap: 4px;
       min-width: 0;
     }
-    .card-label { font-size: clamp(.85rem, 2.2vw, 1.1rem); opacity: .65; font-weight: 600; }
-    .card-value { font-size: clamp(1.5rem, 5vw, 2.5rem); font-weight: 800; font-variant-numeric: tabular-nums; }
+    .card-label { font-size: clamp(.78rem, 2vw, 1rem); opacity: .65; font-weight: 600; }
+    .card-value { font-size: clamp(1.35rem, 4.4vw, 2.2rem); font-weight: 800; font-variant-numeric: tabular-nums; }
+    .card-value.blue { color: var(--c-blue); }
+    .card-value.violet { color: var(--c-violet); }
+    .card-value.gold { color: var(--c-gold); }
+    .card-value.muted { color: var(--c-muted); }
 
+    /* ---- Leaderboard ---- */
     .leaderboard { display: flex; flex-wrap: wrap; gap: 1.4vw; }
     .lb-item {
-      flex: 1 1 200px; min-width: 0; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
-      border-radius: 20px; padding: 2vh 1.4vw; text-align: center;
+      flex: 1 1 200px; min-width: 0; text-align: center;
+      background: rgba(255,255,255,.045); border: 1px solid rgba(251,191,36,.3);
+      border-radius: 18px; padding: 1.6vh 1.2vw;
     }
-    .lb-medal { font-size: clamp(1.6rem, 4vw, 2.3rem); }
-    .lb-name { font-size: clamp(1.05rem, 3vw, 1.4rem); font-weight: 700; margin-top: 6px; }
-    .lb-sub { font-size: clamp(.85rem, 2.4vw, 1.05rem); opacity: .7; margin-top: 4px; }
+    .lb-medal { font-size: clamp(1.4rem, 3.6vw, 2rem); }
+    .lb-name { font-size: clamp(1rem, 2.8vw, 1.3rem); font-weight: 700; margin-top: 4px; }
+    .lb-sub { font-size: clamp(.8rem, 2.2vw, 1rem); opacity: .7; margin-top: 2px; }
 
     /* A phone in landscape (the natural orientation to mirror onto a landscape TV) is very short
        - not enough vertical room for the same spacing used everywhere else. Packs everything
        tighter instead of letting it get clipped or forcing a scroll on what's meant to be a
        one-glance screen. */
     @media (orientation: landscape) and (max-height: 500px) {
-      .wrap { padding: 1.6vh 2.5vw; gap: .8vh; }
-      .hero { padding: .8vh 2vw; }
-      .hero-label { font-size: clamp(.75rem, 2.2vw, 1.1rem); }
-      .hero-value { font-size: clamp(2.2rem, 8vw, 4.5rem); margin-top: 0; }
-      .grid { grid-template-columns: repeat(4, 1fr); gap: .8vw; }
-      .card { padding: .8vh 1vw; gap: 2px; }
-      .card-label { font-size: clamp(.6rem, 1.5vw, .8rem); }
-      .card-value { font-size: clamp(1rem, 3vw, 1.6rem); }
-      .leaderboard { gap: .8vw; }
-      .lb-item { padding: .8vh 1vw; }
-      .lb-medal { font-size: clamp(1.1rem, 2.6vw, 1.5rem); }
-      .lb-name { font-size: clamp(.8rem, 2vw, 1rem); margin-top: 2px; }
-      .lb-sub { font-size: clamp(.65rem, 1.6vw, .85rem); margin-top: 2px; }
+      .wrap { padding: 1.2vh 2.2vw; gap: .55vh; }
+      .section-label { margin: 0 0 -4px 4px; }
+      .hero { flex-basis: 200px; padding: .5vh 1.6vw; }
+      .hero-label { font-size: clamp(.62rem, 1.7vw, .9rem); }
+      .hero-value { font-size: clamp(1.5rem, 5.5vw, 2.6rem); margin-top: 0; }
+      .hero-sub { font-size: clamp(.55rem, 1.4vw, .75rem); margin-top: 2px; }
+      .row, .leaderboard { gap: .7vw; }
+      .card, .lb-item { padding: .55vh .8vw; gap: 1px; }
+      .card-label { font-size: clamp(.55rem, 1.4vw, .72rem); }
+      .card-value { font-size: clamp(.95rem, 2.8vw, 1.3rem); }
+      .lb-medal { font-size: clamp(1rem, 2.4vw, 1.3rem); }
+      .lb-name { font-size: clamp(.72rem, 1.8vw, .9rem); margin-top: 1px; }
+      .lb-sub { font-size: clamp(.6rem, 1.5vw, .78rem); margin-top: 1px; }
     }
   </style>
 </head>
@@ -98,51 +120,62 @@
     <div class="clock" id="clock"></div>
   </div>
 
-  <div class="hero">
-    <div class="hero-label">💰 Выручка сегодня</div>
-    <div class="hero-value" id="hero-value" th:attr="data-target=${revenueToday}">$0</div>
+  <div class="dual-hero">
+    <div class="hero tone-green">
+      <div class="hero-label">🏆 Всего заработано</div>
+      <div class="hero-value green" id="hero-revenue" th:attr="data-target=${revenueAllTime}">$0</div>
+    </div>
+    <div class="hero" th:classappend="${profitAllTime.signum()} lt 0 ? 'tone-red' : 'tone-green'">
+      <div class="hero-label">💼 Прибыль</div>
+      <div class="hero-value" th:classappend="${profitAllTime.signum()} lt 0 ? 'red' : 'green'"
+           id="hero-profit"
+           th:attr="data-target=${profitAllTime},data-negative=${profitAllTime.signum()} lt 0">$0</div>
+      <div class="hero-sub"
+           th:text="'Выручка $' + ${#numbers.formatDecimal(revenueAllTime, 1, 2, 'POINT')} + ' − расходы $' + ${#numbers.formatDecimal(expensesAllTime, 1, 2, 'POINT')}"></div>
+    </div>
   </div>
 
-  <div class="grid">
-    <div class="card" style="border-color: rgba(96,165,250,.35);">
+  <div class="section-label">📈 Активность</div>
+  <div class="row">
+    <div class="card">
+      <div class="card-label">☀️ Сегодня</div>
+      <div class="card-value blue" th:text="'$' + ${#numbers.formatDecimal(revenueToday, 1, 2, 'POINT')}"></div>
+    </div>
+    <div class="card">
       <div class="card-label">📅 За неделю</div>
-      <div class="card-value" style="color:var(--accent-blue);"
-           th:text="'$' + ${#numbers.formatDecimal(revenueWeek, 1, 2, 'POINT')}"></div>
+      <div class="card-value blue" th:text="'$' + ${#numbers.formatDecimal(revenueWeek, 1, 2, 'POINT')}"></div>
     </div>
-    <div class="card" style="border-color: rgba(96,165,250,.35);">
+    <div class="card">
       <div class="card-label">🗓 За месяц</div>
-      <div class="card-value" style="color:var(--accent-blue);"
-           th:text="'$' + ${#numbers.formatDecimal(revenueMonth, 1, 2, 'POINT')}"></div>
+      <div class="card-value blue" th:text="'$' + ${#numbers.formatDecimal(revenueMonth, 1, 2, 'POINT')}"></div>
     </div>
-    <div class="card" style="border-color: rgba(52,211,153,.35);">
-      <div class="card-label">🏆 Всего заработано</div>
-      <div class="card-value" style="color:var(--accent-green);"
-           th:text="'$' + ${#numbers.formatDecimal(revenueAllTime, 1, 2, 'POINT')}"></div>
+  </div>
+
+  <div class="section-label">🎯 Итоги бизнеса</div>
+  <div class="row">
+    <div class="card">
+      <div class="card-label">👥 Клиентов обслужено</div>
+      <div class="card-value violet" th:text="${clientsServed}"></div>
     </div>
-    <div class="card" style="border-color: rgba(251,191,36,.35);">
-      <div class="card-label">💵 Чаевые всего</div>
-      <div class="card-value" style="color:var(--accent-gold);"
-           th:text="'$' + ${#numbers.formatDecimal(tipsAllTime, 1, 2, 'POINT')}"></div>
+    <div class="card">
+      <div class="card-label">🫙 Продано товаров</div>
+      <div class="card-value violet" th:text="${unitsSold}"></div>
     </div>
     <div class="card">
       <div class="card-label">📦 Заказов оплачено</div>
-      <div class="card-value" th:text="${paidOrders}"></div>
+      <div class="card-value muted" th:text="${paidOrders}"></div>
     </div>
     <div class="card">
-      <div class="card-label">💸 Расходы за месяц</div>
-      <div class="card-value" th:text="'$' + ${#numbers.formatDecimal(expensesMonth, 1, 2, 'POINT')}"></div>
+      <div class="card-label">🧾 Средний чек</div>
+      <div class="card-value muted" th:text="'$' + ${#numbers.formatDecimal(avgOrderValue, 1, 2, 'POINT')}"></div>
     </div>
     <div class="card">
-      <div class="card-label">📉 Расходы всего</div>
-      <div class="card-value" th:text="'$' + ${#numbers.formatDecimal(expensesAllTime, 1, 2, 'POINT')}"></div>
-    </div>
-    <div class="card" style="border-color: rgba(244,114,182,.35);">
-      <div class="card-label">📈 Прибыль всего</div>
-      <div class="card-value" style="color:var(--accent-pink);"
-           th:text="(${profitAllTime.signum()} lt 0 ? '-$' : '$') + ${#numbers.formatDecimal(profitAllTime.abs(), 1, 2, 'POINT')}"></div>
+      <div class="card-label">💵 Чаевые всего</div>
+      <div class="card-value gold" th:text="'$' + ${#numbers.formatDecimal(tipsAllTime, 1, 2, 'POINT')}"></div>
     </div>
   </div>
 
+  <div class="section-label" th:if="${!#lists.isEmpty(topProducts)}">🏆 Топ товары</div>
   <div class="leaderboard" th:if="${!#lists.isEmpty(topProducts)}">
     <div class="lb-item" th:each="tp, iter : ${topProducts}">
       <div class="lb-medal" th:text="${iter.index == 0 ? '🥇' : (iter.index == 1 ? '🥈' : '🥉')}"></div>
@@ -163,22 +196,26 @@
   updateClock();
   setInterval(updateClock, 1000);
 
-  // Purely cosmetic count-up on each (re)load - the underlying number itself only changes on the
-  // next meta-refresh, this just makes each reload feel alive instead of a static screen.
-  (function () {
-    var el = document.getElementById('hero-value');
+  // Purely cosmetic count-up on each (re)load - the underlying numbers only change on the next
+  // meta-refresh, this just makes each reload feel alive instead of a static screen.
+  function countUp(el) {
+    if (!el) return;
     var target = parseFloat(el.getAttribute('data-target')) || 0;
+    var negative = el.getAttribute('data-negative') === 'true';
     var duration = 1400;
     var start = null;
     function frame(ts) {
       if (!start) start = ts;
       var progress = Math.min(1, (ts - start) / duration);
       var eased = 1 - Math.pow(1 - progress, 3);
-      el.textContent = '$' + (target * eased).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      var value = Math.abs(target) * eased;
+      el.textContent = (negative ? '-$' : '$') + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       if (progress < 1) requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
-  })();
+  }
+  countUp(document.getElementById('hero-revenue'));
+  countUp(document.getElementById('hero-profit'));
 </script>
 </body>
 </html>
