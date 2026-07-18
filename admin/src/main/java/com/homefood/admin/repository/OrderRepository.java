@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +52,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     BigDecimal sumTipAmountByStatus(OrderStatus status);
 
     long countByStatus(OrderStatus status);
+
+    /** Revenue for one delivery date (paid orders only) - see DashboardController. */
+    @Query("SELECT COALESCE(SUM(o.totalPrice), 0) FROM Order o WHERE o.status = :status AND o.deliveryDate = :date")
+    BigDecimal sumTotalPriceByStatusAndDeliveryDate(OrderStatus status, LocalDate date);
+
+    /** Revenue over a delivery-date range, inclusive - see DashboardController. */
+    @Query("SELECT COALESCE(SUM(o.totalPrice), 0) FROM Order o " +
+            "WHERE o.status = :status AND o.deliveryDate BETWEEN :start AND :end")
+    BigDecimal sumTotalPriceByStatusAndDeliveryDateBetween(OrderStatus status, LocalDate start, LocalDate end);
 
     /** Paid-orders breakdown by payment method - see PaymentMethodController. */
     @Query("SELECT new com.homefood.admin.repository.PaymentMethodStats(" +
