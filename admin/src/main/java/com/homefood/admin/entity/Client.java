@@ -39,6 +39,9 @@ public class Client {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(nullable = false)
+    private boolean archived = false;
+
     /** Keeps every stored phone in one consistent format (see PhoneNumbers.canonicalize)
      * regardless of which path saved it - public shop, admin form, anywhere else later. */
     @PrePersist

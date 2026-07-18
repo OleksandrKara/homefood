@@ -9,19 +9,9 @@
 </div>
 
 <div class="card-list">
-  <div th:each="c : ${clients}" class="item-card"
-       th:attr="data-search=${#strings.toLowerCase((c.name ?: '') + ' ' + (c.address ?: ''))}">
-    <a th:href="@{'/clients/' + ${c.id} + '/edit'}" style="text-decoration:none; color:inherit; display:block;">
-      <div class="title" th:text="${c.name}"></div>
-      <div class="subtitle" th:if="${c.phone != null and !c.phone.isEmpty()}" th:text="${c.phone}"></div>
-      <div class="meta" th:if="${c.address != null and !c.address.isEmpty()}" th:text="${c.address}"></div>
-    </a>
-    <div class="quick-actions">
-      <a th:if="${c.phone != null and !c.phone.isEmpty()}" th:href="'tel:' + ${c.phone}">📞 Позвонить</a>
-      <a th:if="${c.address != null and !c.address.isEmpty()}"
-         th:href="'https://maps.google.com/?q=' + ${#uris.escapeQueryParam(c.address)}" target="_blank">🗺️ Карта</a>
-    </div>
-  </div>
+  <th:block th:each="c : ${clients}">
+    <div th:replace="~{fragments/client-card :: card(c=${c}, returnTo='/clients')}"></div>
+  </th:block>
 
   <div th:if="${#lists.isEmpty(clients)}" class="empty-state">
     <div class="icon">👤</div>
@@ -34,9 +24,19 @@
   Ничего не найдено.
 </div>
 
+<div class="nav-link-list">
+  <a th:href="@{/clients/archive}" class="nav-link-card">
+    <span class="nav-link-icon">🗄</span>
+    <span class="nav-link-label">Архив</span>
+    <span class="count-badge" th:text="${archivedCount}"></span>
+    <span class="chevron">›</span>
+  </a>
+</div>
+
 <a th:href="@{/clients/new}" class="fab" aria-label="Новый клиент">+</a>
 
 <div th:replace="~{fragments/layout :: bottomnav(active='clients')}"></div>
+<div th:replace="~{fragments/order-card :: swipe-script}"></div>
 <script>
   (function () {
     var searchInput = document.getElementById('client-search');
@@ -45,7 +45,7 @@
     searchInput.addEventListener('input', function () {
       var query = searchInput.value.trim().toLowerCase();
       var anyVisible = false;
-      document.querySelectorAll('.item-card[data-search]').forEach(function (item) {
+      document.querySelectorAll('.order-card[data-search]').forEach(function (item) {
         var matches = query === '' || item.getAttribute('data-search').indexOf(query) !== -1;
         item.style.display = matches ? '' : 'none';
         if (matches) { anyVisible = true; }
