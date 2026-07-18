@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Архив клиентов')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(title='Архив клиентов')}"></div>
+
+<div class="form-page" style="padding-bottom:0;">
+  <a th:href="@{/clients}" style="font-size:0.9rem;">‹ Назад к клиентам</a>
+  <div style="font-size:0.85rem; color:#868e96; margin-top:8px;">
+    Свайпните карточку влево и нажмите «Вернуть», чтобы вернуть клиента из архива.
+  </div>
+</div>
+
+<div class="card-list">
+  <th:block th:each="c : ${clients}">
+    <div th:replace="~{fragments/client-card :: card(c=${c}, returnTo='/clients/archive')}"></div>
+  </th:block>
+
+  <div th:if="${#lists.isEmpty(clients)}" class="empty-state">
+    <div class="icon">🗄</div>
+    В архиве пока пусто.
+  </div>
+</div>
+
+<div th:replace="~{fragments/layout :: bottomnav(active='clients')}"></div>
+<div th:replace="~{fragments/order-card :: swipe-script}"></div>
+</body>
+</html>

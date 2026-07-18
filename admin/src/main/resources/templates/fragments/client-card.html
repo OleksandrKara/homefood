@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="card(c, returnTo)" class="order-card"
+     th:attr="data-search=${#strings.toLowerCase((c.name ?: '') + ' ' + (c.address ?: ''))}">
+
+  <div class="swipe-item">
+    <form th:if="${!c.archived}" th:action="@{'/clients/' + ${c.id} + '/archive'}" method="post" class="swipe-action swipe-action-archive">
+      <input type="hidden" name="returnTo" th:value="${returnTo}"/>
+      <button type="submit">🗄<span>Архив</span></button>
+    </form>
+    <form th:if="${c.archived}" th:action="@{'/clients/' + ${c.id} + '/unarchive'}" method="post" class="swipe-action swipe-action-restore">
+      <input type="hidden" name="returnTo" th:value="${returnTo}"/>
+      <button type="submit">↩<span>Вернуть</span></button>
+    </form>
+
+    <a data-swipe th:href="@{'/clients/' + ${c.id} + '/edit'}" class="item-card swipe-content">
+      <div class="title" th:text="${c.name}"></div>
+      <div class="subtitle" th:if="${c.phone != null and !c.phone.isEmpty()}" th:text="${c.phone}"></div>
+      <div class="meta" th:if="${c.address != null and !c.address.isEmpty()}" th:text="${c.address}"></div>
+    </a>
+  </div>
+
+  <div class="quick-actions" th:if="${(c.phone != null and !c.phone.isEmpty()) or (c.address != null and !c.address.isEmpty())}">
+    <a th:if="${c.phone != null and !c.phone.isEmpty()}" th:href="'tel:' + ${c.phone}">📞 Позвонить</a>
+    <a th:if="${c.address != null and !c.address.isEmpty()}"
+       th:href="'https://maps.google.com/?q=' + ${#uris.escapeQueryParam(c.address)}" target="_blank">🗺️ Карта</a>
+  </div>
+</div>
+</body>
+</html>

@@ -28,8 +28,31 @@ public class ClientController {
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("clients", clientRepository.findAllByOrderByNameAsc());
+        model.addAttribute("clients", clientRepository.findAllByArchivedFalseOrderByNameAsc());
+        model.addAttribute("archivedCount", clientRepository.countByArchivedTrue());
         return "clients/list";
+    }
+
+    @GetMapping("/archive")
+    public String archive(Model model) {
+        model.addAttribute("clients", clientRepository.findAllByArchivedTrueOrderByNameAsc());
+        return "clients/archive";
+    }
+
+    @PostMapping("/{id}/archive")
+    public String archiveClient(@PathVariable Long id, @RequestParam(defaultValue = "/clients") String returnTo) {
+        Client client = clientRef(id);
+        client.setArchived(true);
+        clientRepository.save(client);
+        return "redirect:" + sanitizeReturnTo(returnTo);
+    }
+
+    @PostMapping("/{id}/unarchive")
+    public String unarchiveClient(@PathVariable Long id, @RequestParam(defaultValue = "/clients/archive") String returnTo) {
+        Client client = clientRef(id);
+        client.setArchived(false);
+        clientRepository.save(client);
+        return "redirect:" + sanitizeReturnTo(returnTo);
     }
 
     @GetMapping("/new")
@@ -50,8 +73,7 @@ public class ClientController {
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Client not found: " + id));
+        Client client = clientRef(id);
         model.addAttribute("client", client);
         model.addAttribute("addressSuggestions", addressSuggestions());
         model.addAttribute("orderHistory", orderRepository.findByClientIdOrderByDeliveryDateDescCreatedAtDesc(id));
@@ -70,10 +92,10 @@ public class ClientController {
         if (result.hasErrors()) {
             return "clients/form";
         }
+        Client existing = clientRef(id);
         client.setId(id);
-        Client existing = clientRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Client not found: " + id));
         client.setCreatedAt(existing.getCreatedAt());
+        client.setArchived(existing.isArchived());
         clientRepository.save(client);
         return "redirect:/clients";
     }
@@ -99,11 +121,21 @@ public class ClientController {
         if (result.hasErrors()) {
             return ResponseEntity.badRequest().body(Map.of("error", firstError(result)));
         }
-        Client existing = clientRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Client not found: " + id));
+        Client existing = clientRef(id);
         client.setId(id);
         client.setCreatedAt(existing.getCreatedAt());
+        client.setArchived(existing.isArchived());
         return ResponseEntity.ok(clientJson(clientRepository.save(client)));
+    }
+
+    private Client clientRef(Long id) {
+        return clientRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Client not found: " + id));
+    }
+
+    /** Whitelist redirect target so a crafted form field can't send an admin off-app. */
+    private String sanitizeReturnTo(String returnTo) {
+        return "/clients/archive".equals(returnTo) ? returnTo : "/clients";
     }
 
     private Map<String, Object> clientJson(Client c) {
