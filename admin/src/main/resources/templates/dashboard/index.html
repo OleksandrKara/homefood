@@ -110,7 +110,7 @@
     <div class="card" style="border-color: rgba(244,114,182,.35);">
       <div class="card-label">📈 Прибыль всего</div>
       <div class="card-value" style="color:var(--accent-pink);"
-           th:text="'$' + ${#numbers.formatDecimal(profitAllTime, 1, 2, 'POINT')}"></div>
+           th:text="(${profitAllTime.signum()} lt 0 ? '-$' : '$') + ${#numbers.formatDecimal(profitAllTime.abs(), 1, 2, 'POINT')}"></div>
     </div>
   </div>
 
