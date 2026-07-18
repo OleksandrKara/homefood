@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <!-- Kiosk browsers on cheap TV sticks are often flaky about long-running JS timers, so the page
+       reloads itself the boring, reliable way instead of polling via fetch(). -->
+  <meta http-equiv="refresh" content="60"/>
+  <title>homefood — Дашборд</title>
+  <style>
+    :root {
+      --accent-green: #34d399;
+      --accent-gold: #fbbf24;
+      --accent-blue: #60a5fa;
+      --accent-pink: #f472b6;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100%;
+      background: radial-gradient(circle at 20% 10%, #1a2f3a 0%, #0b1120 45%, #050810 100%);
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .wrap { padding: 3vh 4vw; min-height: 100vh; display: flex; flex-direction: column; gap: 2.4vh; }
+
+    .header { display: flex; justify-content: space-between; align-items: center; }
+    .brand { font-size: 2rem; font-weight: 800; letter-spacing: .02em; display: flex; align-items: center; gap: 12px; }
+    .clock { font-size: 1.4rem; opacity: .7; font-variant-numeric: tabular-nums; }
+
+    .hero {
+      text-align: center;
+      background: linear-gradient(135deg, rgba(52,211,153,.18), rgba(52,211,153,.02));
+      border: 1px solid rgba(52,211,153,.35);
+      border-radius: 28px;
+      padding: 3vh 2vw;
+      box-shadow: 0 0 60px rgba(52,211,153,.15);
+    }
+    .hero-label { font-size: 1.5rem; opacity: .75; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+    .hero-value {
+      font-size: 8rem; font-weight: 900; color: var(--accent-green); line-height: 1; margin-top: 6px;
+      text-shadow: 0 0 40px rgba(52,211,153,.5);
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.6vw; }
+    .card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 20px;
+      padding: 2.2vh 1.4vw;
+      display: flex; flex-direction: column; justify-content: center; gap: 6px;
+    }
+    .card-label { font-size: 1.1rem; opacity: .65; font-weight: 600; }
+    .card-value { font-size: 2.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+    .leaderboard { display: flex; gap: 1.4vw; }
+    .lb-item {
+      flex: 1; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 20px; padding: 2.2vh 1.4vw; text-align: center;
+    }
+    .lb-medal { font-size: 2.3rem; }
+    .lb-name { font-size: 1.4rem; font-weight: 700; margin-top: 6px; }
+    .lb-sub { font-size: 1.05rem; opacity: .7; margin-top: 4px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="brand">🥬 homefood</div>
+    <div class="clock" id="clock"></div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-label">💰 Выручка сегодня</div>
+    <div class="hero-value" id="hero-value" th:attr="data-target=${revenueToday}">$0</div>
+  </div>
+
+  <div class="grid">
+    <div class="card" style="border-color: rgba(96,165,250,.35);">
+      <div class="card-label">📅 За неделю</div>
+      <div class="card-value" style="color:var(--accent-blue);"
+           th:text="'$' + ${#numbers.formatDecimal(revenueWeek, 1, 2, 'POINT')}"></div>
+    </div>
+    <div class="card" style="border-color: rgba(96,165,250,.35);">
+      <div class="card-label">🗓 За месяц</div>
+      <div class="card-value" style="color:var(--accent-blue);"
+           th:text="'$' + ${#numbers.formatDecimal(revenueMonth, 1, 2, 'POINT')}"></div>
+    </div>
+    <div class="card" style="border-color: rgba(52,211,153,.35);">
+      <div class="card-label">🏆 Всего заработано</div>
+      <div class="card-value" style="color:var(--accent-green);"
+           th:text="'$' + ${#numbers.formatDecimal(revenueAllTime, 1, 2, 'POINT')}"></div>
+    </div>
+    <div class="card" style="border-color: rgba(251,191,36,.35);">
+      <div class="card-label">💵 Чаевые всего</div>
+      <div class="card-value" style="color:var(--accent-gold);"
+           th:text="'$' + ${#numbers.formatDecimal(tipsAllTime, 1, 2, 'POINT')}"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">📦 Заказов оплачено</div>
+      <div class="card-value" th:text="${paidOrders}"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">💸 Расходы за месяц</div>
+      <div class="card-value" th:text="'$' + ${#numbers.formatDecimal(expensesMonth, 1, 2, 'POINT')}"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">📉 Расходы всего</div>
+      <div class="card-value" th:text="'$' + ${#numbers.formatDecimal(expensesAllTime, 1, 2, 'POINT')}"></div>
+    </div>
+    <div class="card" style="border-color: rgba(244,114,182,.35);">
+      <div class="card-label">📈 Прибыль всего</div>
+      <div class="card-value" style="color:var(--accent-pink);"
+           th:text="'$' + ${#numbers.formatDecimal(profitAllTime, 1, 2, 'POINT')}"></div>
+    </div>
+  </div>
+
+  <div class="leaderboard" th:if="${!#lists.isEmpty(topProducts)}">
+    <div class="lb-item" th:each="tp, iter : ${topProducts}">
+      <div class="lb-medal" th:text="${iter.index == 0 ? '🥇' : (iter.index == 1 ? '🥈' : '🥉')}"></div>
+      <div class="lb-name" th:text="${tp.productName}"></div>
+      <div class="lb-sub"
+           th:text="'$' + ${#numbers.formatDecimal(tp.totalRevenue, 1, 2, 'POINT')} + ' · ' + ${tp.totalQuantity} + ' ' + ${tp.unit}"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateClock() {
+    var el = document.getElementById('clock');
+    var now = new Date();
+    el.textContent = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }) + '  ' +
+        now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Purely cosmetic count-up on each (re)load - the underlying number itself only changes on the
+  // next meta-refresh, this just makes each reload feel alive instead of a static screen.
+  (function () {
+    var el = document.getElementById('hero-value');
+    var target = parseFloat(el.getAttribute('data-target')) || 0;
+    var duration = 1400;
+    var start = null;
+    function frame(ts) {
+      if (!start) start = ts;
+      var progress = Math.min(1, (ts - start) / duration);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = '$' + (target * eased).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (progress < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
+</script>
+</body>
+</html>
