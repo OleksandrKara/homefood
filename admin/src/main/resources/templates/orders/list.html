@@ -17,6 +17,11 @@
     <div class="stats-label">💵 Чаевые</div>
     <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(tipsTotal, 1, 2, 'POINT')}"></div>
   </div>
+  <div class="stats-card owed" th:if="${owedTotal.signum() > 0}">
+    <div class="stats-label">🤝 Нам должны</div>
+    <div class="stats-value" th:text="'$' + ${#numbers.formatDecimal(owedTotal, 1, 2, 'POINT')}"></div>
+    <div class="stats-sub" th:text="${owedClients} + (${owedClients} == 1 ? ' клиент' : ' клиентов')"></div>
+  </div>
 </div>
 
 <div class="search-bar">

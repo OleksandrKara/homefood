@@ -45,6 +45,11 @@ public class OrderController {
 
     private static final List<OrderStatus> PROCESSED_STATUSES = List.of(OrderStatus.DONE, OrderStatus.CANCELLED);
 
+    // Name of the payment method used to record an unpaid/partial amount - drives the "Нам
+    // должны" stat on the orders list. Matches whatever the payment method is actually named in
+    // Способы оплаты; if it's ever renamed there, this must be updated to match.
+    private static final String OWED_PAYMENT_METHOD = "В долг";
+
     private static final String[] MONTHS_RU = {
             "", "января", "февраля", "марта", "апреля", "мая", "июня",
             "июля", "августа", "сентября", "октября", "ноября", "декабря"
@@ -96,6 +101,8 @@ public class OrderController {
         model.addAttribute("soldTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.DONE));
         model.addAttribute("expectedTotal", orderRepository.sumTotalPriceByStatus(OrderStatus.NEW));
         model.addAttribute("tipsTotal", orderRepository.sumTipAmountByStatus(OrderStatus.DONE));
+        model.addAttribute("owedTotal", orderPaymentRepository.sumAmountByPaymentMethodAndOrderStatus(OWED_PAYMENT_METHOD, OrderStatus.DONE));
+        model.addAttribute("owedClients", orderPaymentRepository.countDistinctClientsByPaymentMethodAndOrderStatus(OWED_PAYMENT_METHOD, OrderStatus.DONE));
         model.addAttribute("processedCount", orderRepository.countByArchivedFalseAndStatusIn(PROCESSED_STATUSES));
         model.addAttribute("archivedCount", orderRepository.countByArchivedTrue());
         return "orders/list";
