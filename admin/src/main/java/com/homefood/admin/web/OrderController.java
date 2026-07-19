@@ -4,12 +4,14 @@ import com.homefood.admin.entity.Client;
 import com.homefood.admin.entity.DeliveryType;
 import com.homefood.admin.entity.Order;
 import com.homefood.admin.entity.OrderItem;
+import com.homefood.admin.entity.OrderPayment;
 import com.homefood.admin.entity.OrderStatus;
 import com.homefood.admin.entity.Product;
 import com.homefood.admin.pricing.OrderPricing;
 import com.homefood.admin.repository.ClientRepository;
 import com.homefood.admin.repository.DistrictRepository;
 import com.homefood.admin.repository.OrderItemRepository;
+import com.homefood.admin.repository.OrderPaymentRepository;
 import com.homefood.admin.repository.OrderRepository;
 import com.homefood.admin.repository.PaymentMethodRepository;
 import com.homefood.admin.repository.ProductRepository;
@@ -53,6 +55,7 @@ public class OrderController {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final OrderPaymentRepository orderPaymentRepository;
     private final ClientRepository clientRepository;
     private final ProductRepository productRepository;
     private final DistrictRepository districtRepository;
@@ -149,6 +152,7 @@ public class OrderController {
         order.setClient(clientRef(clientId));
         order.setItems(items);
         order.setTotalPrice(sumItems(items));
+        order.setPayments(buildPayments(order, request));
         orderRepository.save(order);
         return "redirect:/orders";
     }
@@ -180,7 +184,9 @@ public class OrderController {
         order.setClient(clientRef(clientId));
         order.setItems(items);
         order.setTotalPrice(sumItems(items));
+        order.setPayments(buildPayments(order, request));
         orderItemRepository.deleteByOrderId(id);
+        orderPaymentRepository.deleteByOrderId(id);
         orderRepository.save(order);
         return "redirect:/orders";
     }
@@ -244,6 +250,43 @@ public class OrderController {
 
     private BigDecimal sumItems(List<OrderItem> items) {
         return items.stream().map(OrderItem::getLineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Reads parallel paymentMethodRow[]/paymentAmountRow[] arrays the same way buildItems() reads
+     * the product rows - see that method's javadoc for why raw servlet params instead of
+     * @RequestParam List<String>. Unlike items, payments are optional (an order isn't necessarily
+     * paid yet), so an empty result is valid and rows with a blank method/amount or a
+     * zero-or-negative amount are just skipped rather than rejected.
+     */
+    private Set<OrderPayment> buildPayments(Order order, HttpServletRequest request) {
+        String[] methods = request.getParameterValues("paymentMethodRow");
+        String[] amounts = request.getParameterValues("paymentAmountRow");
+        int rowCount = methods == null ? 0 : methods.length;
+
+        Set<OrderPayment> payments = new LinkedHashSet<>();
+        for (int i = 0; i < rowCount; i++) {
+            String method = methods[i];
+            String amountStr = (amounts != null && i < amounts.length) ? amounts[i] : null;
+            if (method == null || method.isBlank() || amountStr == null || amountStr.isBlank()) {
+                continue;
+            }
+            BigDecimal amount;
+            try {
+                amount = new BigDecimal(amountStr.trim());
+            } catch (NumberFormatException e) {
+                continue;
+            }
+            if (amount.signum() <= 0) {
+                continue;
+            }
+            OrderPayment payment = new OrderPayment();
+            payment.setOrder(order);
+            payment.setPaymentMethod(method.trim());
+            payment.setAmount(amount);
+            payments.add(payment);
+        }
+        return payments;
     }
 
     private int totalQuantity(Order order) {

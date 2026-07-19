@@ -128,13 +128,23 @@
 
   <div id="done-fields">
     <div class="mb-3">
-      <label class="form-label" for="paymentMethod">Оплата</label>
-      <select th:field="*{paymentMethod}" class="form-select">
-        <option value="">— способ оплаты —</option>
-        <option th:each="pm : ${paymentMethods}" th:value="${pm.name}" th:text="${pm.name}"></option>
-        <option th:if="${order.paymentMethod != null and !order.paymentMethod.isEmpty() and !paymentMethods.![name].contains(order.paymentMethod)}"
-                th:value="${order.paymentMethod}" th:text="${order.paymentMethod}" selected></option>
-      </select>
+      <label class="form-label">Оплата</label>
+      <div id="order-payments">
+        <div class="order-payment-row" th:each="p : ${order.payments}" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+          <select name="paymentMethodRow" class="form-select payment-method-select" style="flex:2;">
+            <option value="">— способ оплаты —</option>
+            <option th:each="pm : ${paymentMethods}" th:value="${pm.name}" th:text="${pm.name}"
+                    th:selected="${p.paymentMethod == pm.name}"></option>
+            <option th:if="${!paymentMethods.![name].contains(p.paymentMethod)}"
+                    th:value="${p.paymentMethod}" th:text="${p.paymentMethod}" selected></option>
+          </select>
+          <input type="number" step="0.01" min="0.01" name="paymentAmountRow" th:value="${p.amount}"
+                 class="form-control payment-amount-input" placeholder="сумма" style="flex:1;"/>
+          <button type="button" class="btn btn-outline-secondary remove-payment-row" aria-label="Удалить способ оплаты" style="min-height:48px;">✕</button>
+        </div>
+      </div>
+      <button type="button" id="add-payment-row" class="btn btn-outline-dark w-100 mb-2">+ Добавить способ оплаты</button>
+      <div id="payment-total-hint" style="font-size:0.85rem; color:#868e96;"></div>
       <button type="button" class="btn-link-action" onclick="openQuickAdd('paymentMethod')">+ Новый способ оплаты</button>
     </div>
     <div class="mb-3">
@@ -142,6 +152,17 @@
       <input type="number" step="0.01" min="0" id="tipAmount" th:field="*{tipAmount}" class="form-control" placeholder="необязательно"/>
     </div>
   </div>
+
+  <template id="empty-payment-row-template">
+    <div class="order-payment-row" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start;">
+      <select name="paymentMethodRow" class="form-select payment-method-select" style="flex:2;">
+        <option value="">— способ оплаты —</option>
+        <option th:each="pm : ${paymentMethods}" th:value="${pm.name}" th:text="${pm.name}"></option>
+      </select>
+      <input type="number" step="0.01" min="0.01" name="paymentAmountRow" class="form-control payment-amount-input" placeholder="сумма" style="flex:1;"/>
+      <button type="button" class="btn btn-outline-secondary remove-payment-row" aria-label="Удалить способ оплаты" style="min-height:48px;">✕</button>
+    </div>
+  </template>
 
   <div class="mb-3">
     <label class="form-label" for="notes">Заметки</label>
@@ -275,6 +296,41 @@
 
   updateOrderTotal();
 
+  // ---- Payment split: several payment methods on one order (e.g. partially cash, partially
+  // Venmo). Unlike items, zero rows is a valid state (order not paid yet), so there's no
+  // fallback empty row and removing a row deletes it outright instead of just clearing it. ----
+  var paymentsContainer = document.getElementById('order-payments');
+
+  function updatePaymentTotal() {
+    var total = 0;
+    document.querySelectorAll('.order-payment-row').forEach(function (row) {
+      var amount = parseFloat(row.querySelector('.payment-amount-input').value);
+      if (!isNaN(amount)) { total += amount; }
+    });
+    var hintEl = document.getElementById('payment-total-hint');
+    hintEl.textContent = total > 0 ? ('Внесено: $' + total.toFixed(2)) : '';
+  }
+
+  function wirePaymentRow(row) {
+    row.querySelector('.payment-amount-input').addEventListener('input', updatePaymentTotal);
+    row.querySelector('.remove-payment-row').addEventListener('click', function () {
+      row.remove();
+      updatePaymentTotal();
+    });
+  }
+
+  document.querySelectorAll('.order-payment-row').forEach(wirePaymentRow);
+
+  document.getElementById('add-payment-row').addEventListener('click', function () {
+    var template = document.getElementById('empty-payment-row-template');
+    var clone = template.content.cloneNode(true);
+    paymentsContainer.appendChild(clone);
+    wirePaymentRow(paymentsContainer.lastElementChild);
+    updatePaymentTotal();
+  });
+
+  updatePaymentTotal();
+
   // The app is deployed under a context path (/admin) that th:href/th:action handle
   // automatically, but a hand-built fetch() URL doesn't go through Thymeleaf at request time -
   // without this prefix "/clients/quick" resolves against the domain root, missing /admin
@@ -398,8 +454,18 @@
   // ---- Add a district / payment method without leaving the order form ----
   var quickAddConfig = {
     district: { title: 'Новый район', url: contextPath + 'districts/quick', selectId: 'district' },
-    paymentMethod: { title: 'Новый способ оплаты', url: contextPath + 'payment-methods/quick', selectId: 'paymentMethod' }
+    paymentMethod: { title: 'Новый способ оплаты', url: contextPath + 'payment-methods/quick' }
   };
+
+  function addSelectOptionIfMissing(select, name) {
+    var found = Array.prototype.some.call(select.options, function (o) { return o.value === name; });
+    if (!found) {
+      var opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    }
+  }
 
   function openQuickAdd(type) {
     var cfg = quickAddConfig[type];
@@ -443,16 +509,26 @@
         errorEl.style.display = '';
         return;
       }
-      var select = document.getElementById(cfg.selectId);
       var newName = result.data.name;
-      var found = Array.prototype.some.call(select.options, function (o) { return o.value === newName; });
-      if (!found) {
-        var opt = document.createElement('option');
-        opt.value = newName;
-        opt.textContent = newName;
-        select.appendChild(opt);
+      if (cfg.selectId) {
+        var select = document.getElementById(cfg.selectId);
+        addSelectOptionIfMissing(select, newName);
+        select.value = newName;
+      } else {
+        // Payment methods have one select per row (zero or many), not a single fixed element -
+        // make the new method available everywhere it could be picked, then add a fresh row
+        // pre-selected to it so it's immediately usable without hunting for an empty row.
+        document.querySelectorAll('.payment-method-select').forEach(function (s) {
+          addSelectOptionIfMissing(s, newName);
+        });
+        var rowTemplate = document.getElementById('empty-payment-row-template');
+        rowTemplate.content.querySelectorAll('.payment-method-select').forEach(function (s) {
+          addSelectOptionIfMissing(s, newName);
+        });
+        document.getElementById('add-payment-row').click();
+        var rows = document.querySelectorAll('.order-payment-row');
+        rows[rows.length - 1].querySelector('.payment-method-select').value = newName;
       }
-      select.value = newName;
       closeQuickAddModal();
     }).catch(function () {
       errorEl.textContent = 'Ошибка сети, попробуйте ещё раз';
