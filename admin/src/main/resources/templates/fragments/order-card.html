@@ -27,7 +27,7 @@
       <div class="meta">
         <span th:text="${o.deliveryType.name() == 'PICKUP'} ? '🏠 Самовывоз' : '🚚 Доставка'"></span>
         <span th:if="${o.deliveryType.name() == 'DELIVERY' and o.district != null and !o.district.isEmpty()}" th:text="${o.district}"></span>
-        <span th:if="${o.paymentMethod != null and !o.paymentMethod.isEmpty()}" th:text="'💳 ' + ${o.paymentMethod}"></span>
+        <span th:each="p : ${o.payments}" th:text="'💳 ' + ${p.paymentMethod} + ' $' + ${#numbers.formatDecimal(p.amount, 1, 2, 'POINT')}"></span>
         <span th:if="${o.tipAmount != null and o.tipAmount.signum() > 0}" th:text="'💵 +$' + ${#numbers.formatDecimal(o.tipAmount, 1, 2, 'POINT')} + ' чай'"></span>
       </div>
       <div class="meta" th:if="${o.notes != null and !o.notes.isEmpty()}">

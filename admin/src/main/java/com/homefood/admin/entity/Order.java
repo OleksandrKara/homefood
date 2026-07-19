@@ -13,7 +13,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "orders")
@@ -65,9 +67,19 @@ public class Order {
     @Column(name = "total_price")
     private BigDecimal totalPrice;
 
-    @Size(max = 50, message = "Слишком длинный способ оплаты")
-    @Column(name = "payment_method")
-    private String paymentMethod;
+    /** An order can be paid via several methods at once (e.g. partially cash, partially Venmo) -
+     * see OrderPayment. Populated/replaced by OrderController from the submitted form rows, not
+     * bound directly by Spring MVC.
+     *
+     * Deliberately EAGER via a separate per-order SELECT (fetch = EAGER, no JOIN FETCH in the
+     * OrderRepository queries) rather than joined-fetched alongside items: fetch-joining two
+     * collections in one query multiplies rows (item x payment combinations), and even with one
+     * side a Set, the List-typed items collection still ends up with duplicated entries - visibly
+     * broke as "every line item showing twice" during manual testing. The extra per-order query
+     * this costs is a non-issue at this app's scale. */
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("id ASC")
+    private Set<OrderPayment> payments = new LinkedHashSet<>();
 
     @PositiveOrZero(message = "Чаевые не могут быть отрицательными")
     @Column(name = "tip_amount")

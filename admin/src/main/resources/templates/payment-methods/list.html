@@ -15,7 +15,7 @@
       <span class="title" th:text="${s.paymentMethod}"></span>
       <span class="subtitle" th:text="'$' + ${#numbers.formatDecimal(s.total, 1, 2, 'POINT')}"></span>
     </div>
-    <div class="meta"><span th:text="${s.orderCount} + ' зак.'"></span></div>
+    <div class="meta"><span th:text="${s.paymentCount} + ' плат.'"></span></div>
   </div>
 
   <div th:if="${paidCount == 0}" class="empty-state" style="padding:30px 24px;">
