@@ -239,14 +239,17 @@
   toggleDoneFields();
 
   // Mirrors OrderPricing.calculateTotal server-side: flat price x quantity, unless the product
-  // has the tiered discount enabled (units 2-3 get $1 off each) - currently only Квашеная капуста.
+  // has the tiered discount enabled - then within every group of 3 units the 2nd/3rd are $1 off,
+  // and the pattern repeats for each further group of 3 (not just the first 3 units overall) -
+  // currently only Квашеная капуста.
   function calculateLineTotal(basePrice, quantity, tieredDiscountEnabled) {
     if (!tieredDiscountEnabled) {
       return basePrice * quantity;
     }
     var total = 0;
     for (var unitIndex = 1; unitIndex <= quantity; unitIndex++) {
-      total += (unitIndex === 2 || unitIndex === 3) ? (basePrice - 1) : basePrice;
+      var positionInGroup = ((unitIndex - 1) % 3) + 1;
+      total += (positionInGroup === 2 || positionInGroup === 3) ? (basePrice - 1) : basePrice;
     }
     return total;
   }
