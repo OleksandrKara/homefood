@@ -25,6 +25,16 @@
       <span class="title" th:text="'$' + ${#numbers.formatDecimal(operationalTotal, 1, 2, 'POINT')}"></span>
     </div>
   </div>
+  <div class="item-card">
+    <div class="row-top">
+      <span class="subtitle">💼 Деньги инвестора (всего)</span>
+      <span class="title" th:text="'$' + ${#numbers.formatDecimal(investorTotal, 1, 2, 'POINT')}"></span>
+    </div>
+    <div class="row-top">
+      <span class="subtitle">🔄 Оборотка (всего)</span>
+      <span class="title" th:text="'$' + ${#numbers.formatDecimal(workingCapitalTotal, 1, 2, 'POINT')}"></span>
+    </div>
+  </div>
 </div>
 
 <div class="card-list">
@@ -37,6 +47,7 @@
     <div class="subtitle" th:text="${e.description}"></div>
     <div class="meta">
       <span th:text="'$' + ${#numbers.formatDecimal(e.amount, 1, 2, 'POINT')}"></span>
+      <span th:text="${e.fundingSource.name() == 'INVESTOR'} ? '💼 Инвестор' : '🔄 Оборотка'"></span>
       <span th:each="ei : ${ingredientsByExpense.get(e.id)}"
             th:text="${#numbers.formatDecimal(ei.quantity, 1, 2, 'POINT')} + ' ' + ${ei.ingredient.unit} + ' ' + ${ei.ingredient.name}"></span>
     </div>

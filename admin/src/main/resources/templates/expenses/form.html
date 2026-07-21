@@ -24,6 +24,18 @@
   </div>
 
   <div class="mb-3">
+    <label class="form-label">На чьи деньги</label>
+    <div class="segmented">
+      <input type="radio" id="fs-investor" name="fundingSource" value="INVESTOR"
+             th:checked="${expense.fundingSource.name() == 'INVESTOR'}"/>
+      <label for="fs-investor">💼 Инвестор</label>
+      <input type="radio" id="fs-working-capital" name="fundingSource" value="WORKING_CAPITAL"
+             th:checked="${expense.fundingSource.name() == 'WORKING_CAPITAL'}"/>
+      <label for="fs-working-capital">🔄 Оборотка</label>
+    </div>
+  </div>
+
+  <div class="mb-3">
     <label class="form-label" for="description">Описание</label>
     <input type="text" th:field="*{description}" class="form-control" required autofocus placeholder="Банки для консервации / 10 качанов капусты"/>
   </div>

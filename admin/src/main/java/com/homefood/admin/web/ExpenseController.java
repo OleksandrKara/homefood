@@ -3,6 +3,7 @@ package com.homefood.admin.web;
 import com.homefood.admin.entity.Expense;
 import com.homefood.admin.entity.ExpenseCategory;
 import com.homefood.admin.entity.ExpenseIngredient;
+import com.homefood.admin.entity.FundingSource;
 import com.homefood.admin.entity.Ingredient;
 import com.homefood.admin.repository.ExpenseIngredientRepository;
 import com.homefood.admin.repository.ExpenseRepository;
@@ -42,6 +43,8 @@ public class ExpenseController {
         model.addAttribute("expenses", expenseRepository.findAllByOrderByExpenseDateDescCreatedAtDesc());
         model.addAttribute("investmentTotal", expenseRepository.sumAmountByCategory(ExpenseCategory.INVESTMENT));
         model.addAttribute("operationalTotal", expenseRepository.sumAmountByCategory(ExpenseCategory.OPERATIONAL));
+        model.addAttribute("investorTotal", expenseRepository.sumAmountByFundingSource(FundingSource.INVESTOR));
+        model.addAttribute("workingCapitalTotal", expenseRepository.sumAmountByFundingSource(FundingSource.WORKING_CAPITAL));
 
         Map<Long, List<ExpenseIngredient>> ingredientsByExpense = new LinkedHashMap<>();
         for (ExpenseIngredient ei : expenseIngredientRepository.findAll()) {
@@ -209,6 +212,7 @@ public class ExpenseController {
 
     private void addFormAttributes(Model model) {
         model.addAttribute("categories", ExpenseCategory.values());
+        model.addAttribute("fundingSources", FundingSource.values());
         model.addAttribute("ingredients", ingredientRepository.findAllByOrderByNameAsc());
     }
 }
