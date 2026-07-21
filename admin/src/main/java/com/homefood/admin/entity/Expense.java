@@ -29,6 +29,11 @@ public class Expense {
     @Column(nullable = false)
     private ExpenseCategory category = ExpenseCategory.OPERATIONAL;
 
+    /** Whose money paid for this - see FundingSource javadoc for how this differs from category. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "funding_source", nullable = false)
+    private FundingSource fundingSource = FundingSource.INVESTOR;
+
     @NotBlank(message = "Укажите описание")
     @Size(max = 500, message = "Слишком длинное описание")
     @Column(nullable = false)
